@@ -1,0 +1,163 @@
+.a4Sheet {
+  width: 794px;
+  min-height: 1123px;
+  background-color: #FFFFFF;
+  margin: 0 auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  color: #0F172A;
+  position: relative;
+  box-sizing: border-box;
+  transform-origin: top center;
+  transition: transform 0.15s ease;
+}
+
+/* Margin variations */
+.marginsCompact {
+  padding: 32px 40px;
+}
+
+.marginsNormal {
+  padding: 48px 52px;
+}
+
+.marginsSpacious {
+  padding: 60px 64px;
+}
+
+/* Template 1: ATS Classic */
+.atsClassicHeader {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #0F172A;
+}
+
+.atsName {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.atsSubtitle {
+  font-size: 13px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.atsContactLine {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #475569;
+  margin-top: 6px;
+}
+
+.sectionTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0F172A;
+  border-bottom: 1px solid #CBD5E1;
+  padding-bottom: 4px;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+/* Modern Pro adjustments */
+.modernHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--primary);
+}
+
+/* Software Engineer template */
+.sweTechHighlight {
+  background-color: #F8FAFC;
+  border-left: 3px solid #2563EB;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  border-radius: 4px;
+}
+
+/* Minimal template */
+.minimalHeader {
+  margin-bottom: 24px;
+}
+
+.minimalTitle {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Common Item Blocks */
+.itemBlock {
+  margin-bottom: 12px;
+}
+
+.itemHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.itemRole {
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.itemCompany {
+  font-weight: 600;
+  color: #334155;
+}
+
+.itemDate {
+  font-size: 12px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.itemDesc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #334155;
+  margin-top: 3px;
+}
+
+.bulletList {
+  margin-top: 4px;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.bulletItem {
+  margin-bottom: 2px;
+}
+
+.skillRow {
+  display: flex;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.skillLabel {
+  font-weight: 700;
+  color: #0F172A;
+  min-width: 140px;
+}
+
+.skillValues {
+  color: #334155;
+  flex: 1;
+}

@@ -1,0 +1,17 @@
+{
+  "name": "resume-ai",
+  "version": "1.0.0",
+  "description": "ResumeAI — AI-Powered ATS Resume Optimization Platform",
+  "main": "server/server.js",
+  "scripts": {
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
+    "client": "npm --prefix client dev",
+    "client:build": "npm --prefix client build",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "start": "node server/server.js"
+  },
+  "keywords": ["ats", "resume", "ai", "job-matching", "react", "express", "mongodb"],
+  "author": "Ezhilmaran",
+  "license": "MIT"
+}
