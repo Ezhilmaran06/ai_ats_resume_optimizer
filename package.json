@@ -8,6 +8,8 @@
     "server:dev": "npm --prefix server run dev",
     "client": "npm --prefix client dev",
     "client:build": "npm --prefix client build",
+    "ai": "python -m uvicorn app.main:app --app-dir ai-service --port 8000 --reload",
+    "ai:start": "python -m uvicorn app.main:app --app-dir ai-service --port 8000",
     "install:all": "npm install && npm --prefix server install && npm --prefix client install",
     "start": "node server/server.js"
   },

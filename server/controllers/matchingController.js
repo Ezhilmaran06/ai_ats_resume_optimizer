@@ -5,6 +5,7 @@ const JobAnalysis = require('../models/JobAnalysis');
 const Activity = require('../models/Activity');
 const { matchResumeToJob } = require('../services/matching/matchingEngine');
 const { optimizeResumeForJob } = require('../services/ai/resumeOptimizer');
+const { analyzeKeywordsWithPython, getOptimizationPlanWithPython } = require('../services/ai/pythonAiClient');
 
 // @desc    Match resume or profile against a job description
 // @route   POST /api/matching/analyze
@@ -38,7 +39,33 @@ exports.analyzeMatching = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Resume or Profile not found.' });
     }
 
-    const matchResults = matchResumeToJob(candidateData, jobAnalysis);
+    let matchResults = null;
+    try {
+      const rolePayload = {
+        role: job.role,
+        company: job.company,
+        extractedSkills: jobAnalysis.skills?.map(s => s.name) || [],
+        requiredSkills: jobAnalysis.requiredSkills?.map(s => s.name) || []
+      };
+      const pyKwResults = await analyzeKeywordsWithPython(candidateData.toObject(), rolePayload);
+      matchResults = {
+        matchPercentage: pyKwResults.matchPercentage,
+        summary: {
+          matchedCount: pyKwResults.matchedCount,
+          partialCount: pyKwResults.partialCount,
+          missingCount: pyKwResults.missingCount,
+          totalJobSkills: pyKwResults.totalCount
+        },
+        keywords: {
+          found: pyKwResults.keywords.filter(k => k.status === 'MATCHED'),
+          partial: pyKwResults.keywords.filter(k => k.status === 'PARTIAL'),
+          missing: pyKwResults.keywords.filter(k => k.status === 'MISSING')
+        }
+      };
+    } catch (pyErr) {
+      console.warn('[Matching Controller] Python service error, using local matcher:', pyErr.message);
+      matchResults = matchResumeToJob(candidateData, jobAnalysis);
+    }
 
     res.status(200).json({
       success: true,
@@ -83,13 +110,26 @@ exports.optimizeResume = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Job analysis not found.' });
     }
 
-    const optimizationPlan = await optimizeResumeForJob(resume, job, jobAnalysis);
+    let optimizationPlan = null;
+    try {
+      const rolePayload = {
+        role: job.role,
+        company: job.company,
+        extractedSkills: jobAnalysis.skills?.map(s => s.name) || [],
+        requiredSkills: jobAnalysis.requiredSkills?.map(s => s.name) || []
+      };
+      const pyResp = await getOptimizationPlanWithPython(resume.toObject(), rolePayload);
+      optimizationPlan = pyResp.data;
+    } catch (pyErr) {
+      console.warn('[Matching Controller] Python optimizer error, using local optimizer:', pyErr.message);
+      optimizationPlan = await optimizeResumeForJob(resume, job, jobAnalysis);
+    }
 
     await Activity.create({
       user: req.user.id,
       action: 'Generated Tailored Suggestions',
       type: 'ats',
-      details: `Generated ${optimizationPlan.suggestions.length} suggestions for "${resume.title}" targeting "${job.role}".`,
+      details: `Generated ${optimizationPlan.suggestions?.length || 0} suggestions for "${resume.title}" targeting "${job.role}".`,
       targetId: resume._id
     });
 

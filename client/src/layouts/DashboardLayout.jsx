@@ -38,16 +38,12 @@ export default function DashboardLayout() {
     const path = location.pathname;
     if (path === '/dashboard') return 'Dashboard Overview';
     if (path === '/dashboard/profile') return 'Master Profile (Source of Truth)';
-    if (path === '/dashboard/resumes') return 'My Resumes';
-    if (path.startsWith('/dashboard/builder')) return 'Visual Resume Builder';
+    if (path === '/dashboard/resumes') return 'Upload & Manage Resumes';
+    if (path.startsWith('/dashboard/builder')) return 'AI Resume Editor';
     if (path === '/dashboard/templates') return 'ATS-Friendly Templates';
-    if (path === '/dashboard/jobs/analyze') return 'Job Description Analyzer';
-    if (path === '/dashboard/jobs') return 'Saved Jobs';
-    if (path.startsWith('/dashboard/optimizer')) return 'AI Resume Tailoring & Optimizer';
+    if (path.startsWith('/dashboard/optimizer')) return 'Optimize Resume for Role';
     if (path.startsWith('/dashboard/ats')) return 'ATS Compatibility Analyzer';
-    if (path === '/dashboard/skill-gap') return 'Skill Gap & Learning Roadmap';
-    if (path === '/dashboard/applications') return 'Job Application Pipeline Tracker';
-    if (path === '/dashboard/interview') return 'Interview Preparation & Elevator Pitch';
+    if (path === '/dashboard/skill-gap') return 'Skill & Keyword Analysis';
     if (path === '/dashboard/settings') return 'Account & AI Settings';
     return 'Dashboard';
   };
@@ -84,72 +80,37 @@ export default function DashboardLayout() {
               <LayoutDashboard size={18} />
               {!collapsed && <span>Dashboard</span>}
             </NavLink>
-            <NavLink
-              to="/dashboard/profile"
-              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            >
-              <User size={18} />
-              {!collapsed && <span>My Profile</span>}
-            </NavLink>
           </div>
 
-          {/* Resumes Group */}
+          {/* My Resume Group */}
           <div className={styles.navGroup}>
-            {!collapsed && <div className={styles.groupLabel}>Resumes</div>}
+            {!collapsed && <div className={styles.groupLabel}>My Resume</div>}
             <NavLink
               to="/dashboard/resumes"
-              end
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
               <FileText size={18} />
-              {!collapsed && <span>All Resumes</span>}
+              {!collapsed && <span>Upload & Resumes</span>}
             </NavLink>
             <NavLink
               to="/dashboard/builder"
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
               <Edit3 size={18} />
-              {!collapsed && <span>Resume Builder</span>}
+              {!collapsed && <span>Resume Editor</span>}
             </NavLink>
             <NavLink
-              to="/dashboard/templates"
+              to="/dashboard/profile"
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
-              <LayoutTemplate size={18} />
-              {!collapsed && <span>Templates</span>}
+              <User size={18} />
+              {!collapsed && <span>Master Profile</span>}
             </NavLink>
           </div>
 
-          {/* Jobs Group */}
+          {/* Core ATS & Optimization Tools */}
           <div className={styles.navGroup}>
-            {!collapsed && <div className={styles.groupLabel}>Jobs</div>}
-            <NavLink
-              to="/dashboard/jobs/analyze"
-              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            >
-              <Briefcase size={18} />
-              {!collapsed && <span>Analyze Job</span>}
-            </NavLink>
-            <NavLink
-              to="/dashboard/jobs"
-              end
-              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            >
-              <Bookmark size={18} />
-              {!collapsed && <span>Saved Jobs</span>}
-            </NavLink>
-          </div>
-
-          {/* Optimize Group */}
-          <div className={styles.navGroup}>
-            {!collapsed && <div className={styles.groupLabel}>Optimize</div>}
-            <NavLink
-              to="/dashboard/optimizer"
-              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            >
-              <Sparkles size={18} />
-              {!collapsed && <span>Resume Optimizer</span>}
-            </NavLink>
+            {!collapsed && <div className={styles.groupLabel}>Optimization</div>}
             <NavLink
               to="/dashboard/ats"
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
@@ -158,30 +119,25 @@ export default function DashboardLayout() {
               {!collapsed && <span>ATS Analyzer</span>}
             </NavLink>
             <NavLink
+              to="/dashboard/optimizer"
+              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+            >
+              <Sparkles size={18} />
+              {!collapsed && <span>Optimize for Role</span>}
+            </NavLink>
+            <NavLink
               to="/dashboard/skill-gap"
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
               <Compass size={18} />
-              {!collapsed && <span>Skill Gap</span>}
-            </NavLink>
-          </div>
-
-          {/* Career Group */}
-          <div className={styles.navGroup}>
-            {!collapsed && <div className={styles.groupLabel}>Career</div>}
-            <NavLink
-              to="/dashboard/applications"
-              className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-            >
-              <Send size={18} />
-              {!collapsed && <span>Applications</span>}
+              {!collapsed && <span>Skill & Keyword Analysis</span>}
             </NavLink>
             <NavLink
-              to="/dashboard/interview"
+              to="/dashboard/templates"
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
-              <MessageSquare size={18} />
-              {!collapsed && <span>Interview Prep</span>}
+              <LayoutTemplate size={18} />
+              {!collapsed && <span>Templates</span>}
             </NavLink>
           </div>
         </nav>

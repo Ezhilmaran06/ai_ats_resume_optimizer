@@ -183,7 +183,13 @@ export default function ResumeOptimizerPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {selectedResumeId && (
+            <Link to={`/dashboard/builder/${selectedResumeId}`} className="btn btn-secondary">
+              <FileText size={16} />
+              <span>Open in AI Resume Editor</span>
+            </Link>
+          )}
           <button
             onClick={handleGenerateOptimization}
             disabled={optimizing || !selectedResumeId || !selectedJobId}

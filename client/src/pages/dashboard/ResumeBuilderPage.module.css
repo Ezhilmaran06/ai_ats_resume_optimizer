@@ -70,7 +70,7 @@
 }
 
 .rightPane {
-  width: 280px;
+  width: 360px;
   background-color: #FFFFFF;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -111,8 +111,25 @@
   border-top: 1px solid var(--border-color);
 }
 
-@media (max-width: 1200px) {
+.suggestionCard {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.suggestionCard:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: #93C5FD;
+}
+
+@media (max-width: 1280px) {
   .rightPane {
-    display: none;
+    width: 320px;
   }
 }
+

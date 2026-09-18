@@ -3,6 +3,7 @@ const JobAnalysis = require('../models/JobAnalysis');
 const Activity = require('../models/Activity');
 const { analyzeJobDescription } = require('../services/ai/jobAnalyzer');
 const { parseDocumentBuffer } = require('../services/parser/resumeParser');
+const { analyzeRoleWithPython } = require('../services/ai/pythonAiClient');
 
 const DEMO_JOB_TEXT = `Senior Full-Stack Engineer — CloudScale Technologies
 Location: San Francisco, CA / Remote
@@ -80,8 +81,22 @@ exports.createAndAnalyzeJob = async (req, res, next) => {
       });
     }
 
-    // Run AI / heuristic analyzer
-    const analysisResult = await analyzeJobDescription(rawText, role, company);
+    // Run Python FastAPI role analyzer with fallback to local engine
+    let analysisResult = null;
+    try {
+      const pyAnalysis = await analyzeRoleWithPython(role || 'Target Role', rawText, company || '');
+      analysisResult = {
+        extractedRole: pyAnalysis.role,
+        extractedCompany: pyAnalysis.company,
+        requiredSkills: (pyAnalysis.requiredSkills || []).map(s => ({ name: s, importance: 'HIGH', category: 'Required' })),
+        preferredSkills: (pyAnalysis.preferredSkills || []).map(s => ({ name: s, importance: 'MEDIUM', category: 'Preferred' })),
+        skills: (pyAnalysis.extractedSkills || []).map(s => ({ name: s, importance: 'HIGH', category: 'Technical' })),
+        responsibilities: pyAnalysis.responsibilities || []
+      };
+    } catch (pyErr) {
+      console.warn('[Job Controller] Python role analyzer error, using local fallback:', pyErr.message);
+      analysisResult = await analyzeJobDescription(rawText, role, company);
+    }
 
     const job = await Job.create({
       user: req.user.id,

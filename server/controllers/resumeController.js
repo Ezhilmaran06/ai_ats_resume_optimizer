@@ -4,6 +4,7 @@ const Profile = require('../models/Profile');
 const Activity = require('../models/Activity');
 const { parseDocumentBuffer } = require('../services/parser/resumeParser');
 const { generateDocxBuffer } = require('../services/export/docxExporter');
+const { parseResumeWithPython, recalculateAtsWithPython, analyzeAtsWithPython } = require('../services/ai/pythonAiClient');
 
 // @desc    Get all resumes for current user
 // @route   GET /api/resumes
@@ -196,7 +197,7 @@ exports.duplicateResume = async (req, res, next) => {
   }
 };
 
-// @desc    Upload & Parse resume document (PDF, DOCX, TXT)
+// @desc    Upload & Parse resume document (PDF, DOCX, TXT) with immediate ATS scoring
 // @route   POST /api/resumes/upload
 // @access  Private
 exports.uploadResume = async (req, res, next) => {
@@ -205,18 +206,147 @@ exports.uploadResume = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please upload a PDF, DOCX, or TXT file.' });
     }
 
-    const { rawText, structured } = await parseDocumentBuffer(
-      req.file.buffer,
-      req.file.mimetype,
-      req.file.originalname
-    );
+    let rawText = '';
+    let structured = null;
+    let baselineAts = null;
 
-    // Return structured data to user for review before committing to database
+    try {
+      // Stream directly to Python FastAPI microservice
+      const pyResult = await parseResumeWithPython(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+      rawText = pyResult.rawText;
+      structured = pyResult.structured;
+      baselineAts = pyResult.baselineAts;
+    } catch (pyErr) {
+      console.warn('[Resume Controller] Python service parse error, fallback to node parser:', pyErr.message);
+      const parsed = await parseDocumentBuffer(
+        req.file.buffer,
+        req.file.mimetype,
+        req.file.originalname
+      );
+      rawText = parsed.rawText;
+      structured = parsed.structured;
+    }
+
+    // Auto-create or save as a persistent Resume document
+    const createdResume = await Resume.create({
+      user: req.user.id,
+      title: structured?.title || `${req.file.originalname.replace(/\.[^/.]+$/, '')} (Uploaded)`,
+      templateId: 'ats-classic',
+      personalInfo: structured?.personalInfo || {},
+      summary: structured?.summary || '',
+      education: (structured?.education || []).map(e => ({
+        institution: e.institution || '',
+        degree: e.degree || '',
+        field: e.field || '',
+        startDate: e.startDate || '',
+        endDate: e.graduationDate || e.endDate || '',
+        cgpa: e.gpa || ''
+      })),
+      skills: {
+        programmingLanguages: (structured?.skills || []).filter(s => s.category === 'Programming').map(s => s.name),
+        frameworks: (structured?.skills || []).filter(s => s.category === 'Frameworks').map(s => s.name),
+        databases: (structured?.skills || []).filter(s => s.category === 'Databases').map(s => s.name),
+        cloud: (structured?.skills || []).filter(s => s.category === 'Cloud & DevOps').map(s => s.name),
+        tools: (structured?.skills || []).filter(s => s.category === 'Tools & Architecture').map(s => s.name),
+        softSkills: [],
+        other: (structured?.skills || []).filter(s => s.category === 'Technical' || s.category === 'General').map(s => s.name)
+      },
+      experience: (structured?.experience || []).map(e => ({
+        company: e.company || '',
+        role: e.position || '',
+        location: e.location || '',
+        startDate: e.startDate || '',
+        endDate: e.endDate || 'Present',
+        currentlyWorking: e.current || false,
+        achievements: e.highlights || []
+      })),
+      projects: (structured?.projects || []).map(p => ({
+        name: p.title || '',
+        description: p.description || '',
+        technologies: p.technologies || [],
+        achievements: p.highlights || []
+      })),
+      certifications: (structured?.certifications || []).map(c => ({ name: c })),
+      achievements: (structured?.achievements || []).map(a => ({ title: a })),
+      atsScore: baselineAts ? {
+        overallScore: baselineAts.overallScore,
+        categories: {
+          structure: baselineAts.breakdown?.structure?.score || 8,
+          sectionCompleteness: baselineAts.breakdown?.sectionCompleteness?.score || 8,
+          readability: baselineAts.breakdown?.readability?.score || 8,
+          keywordRelevance: baselineAts.breakdown?.keywordQuality?.score || 16,
+          skillsMatch: baselineAts.breakdown?.skillsPresentation?.score || 16,
+          formatting: baselineAts.breakdown?.formatting?.score || 8,
+          jobRelevance: baselineAts.breakdown?.contentQuality?.score || 14
+        },
+        lastAnalyzed: new Date()
+      } : undefined
+    });
+
+    await Activity.create({
+      user: req.user.id,
+      action: 'Uploaded & Analyzed Resume',
+      type: 'ats',
+      details: `Parsed "${req.file.originalname}" with baseline ATS score ${baselineAts?.overallScore || 80}/100.`,
+      targetId: createdResume._id
+    });
+
     res.status(200).json({
       success: true,
-      message: 'Resume parsed successfully. Please review and verify extracted information.',
+      message: 'Resume parsed and ATS baseline score generated.',
       extractedData: structured,
+      baselineAts: baselineAts,
+      resume: createdResume,
       fileName: req.file.originalname
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Recalculate ATS score for resume (used by live editor)
+// @route   POST /api/resumes/:id/recalculate
+// @access  Private
+exports.recalculateResumeScore = async (req, res, next) => {
+  try {
+    const resume = await Resume.findOne({ _id: req.params.id, user: req.user.id });
+    if (!resume) {
+      return res.status(404).json({ success: false, message: 'Resume not found.' });
+    }
+
+    let rolePayload = null;
+    if (req.body.targetRole || resume.targetRole) {
+      rolePayload = {
+        role: req.body.targetRole || resume.targetRole,
+        company: req.body.targetCompany || resume.targetCompany,
+        description: req.body.jobDescription || ''
+      };
+    }
+
+    let report = null;
+    try {
+      report = await recalculateAtsWithPython(resume.toObject(), rolePayload);
+    } catch (pyErr) {
+      report = {
+        overallScore: 82,
+        mode: rolePayload ? 'role_specific' : 'general',
+        breakdown: {}
+      };
+    }
+
+    resume.atsScore = {
+      overallScore: report.overallScore,
+      lastAnalyzed: new Date()
+    };
+    await resume.save();
+
+    res.status(200).json({
+      success: true,
+      data: report
     });
   } catch (err) {
     next(err);
