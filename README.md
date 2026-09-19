@@ -154,17 +154,21 @@ cd ../client && npm install
 
 ### 2. Configure Environment Variables
 Copy `.env.example` to `server/.env`:
-```env
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/resume_ai
-JWT_SECRET=super_secret_resume_ai_jwt_key_2025_secure!
-JWT_EXPIRE=7d
-
-# Optional: External AI Provider (leave blank to use built-in local heuristics engine)
-AI_API_KEY=
-AI_MODEL=gemini-1.5-flash
+```bash
+cp .env.example server/.env
 ```
+
+| Variable | Description | Default / Example | Required |
+| :--- | :--- | :--- | :--- |
+| `PORT` | Port number for Express API server | `5000` | Optional (default 5000) |
+| `CLIENT_URL` | Frontend URL for CORS and redirects | `http://localhost:5173` | Recommended |
+| `MONGODB_URI` | MongoDB connection string (local or Atlas) | `mongodb://localhost:27017/ai_ats_resume_optimizer` | Required in prod (in-memory fallback in dev) |
+| `JWT_SECRET` | Secret key for signing JSON Web Tokens | `your_jwt_secret_min_32_chars` | Required in prod |
+| `AI_SERVICE_URL` | Microservice URL for Python FastAPI ATS engine | `http://localhost:8000` | Optional (fallback to local engine) |
+| `AI_API_KEY` | External LLM API key (Google Gemini or OpenAI) | *(Your LLM API Key)* | Optional |
+| `AI_MODEL` | AI model identifier | `gemini-1.5-flash` | Optional |
+
+> **Security Note**: Never commit actual `.env` files or credentials to git. The application runs automatic environment validation on startup via `server/config/validateEnv.js`.
 
 ### 3. Run the Application
 In development, start the backend and frontend simultaneously:
