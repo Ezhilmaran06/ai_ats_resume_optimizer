@@ -30,9 +30,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
-    status: 'online',
-    platform: 'ResumeAI ATS Platform',
-    timestamp: new Date().toISOString()
+    status: 'ok',
+    service: 'AI ATS Resume Optimizer'
   });
 });
 
