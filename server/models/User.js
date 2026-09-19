@@ -28,10 +28,17 @@ const UserSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+// Do not expose password or internal version in JSON serialization
+UserSchema.set('toJSON', {
+  transform: (doc, ret) => {
+    delete ret.password;
+    delete ret.__v;
+    return ret;
   }
 });
 
