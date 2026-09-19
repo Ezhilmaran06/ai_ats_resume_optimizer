@@ -1,7 +1,7 @@
 {
-  "name": "resume-ai",
+  "name": "ai-ats-resume-optimizer",
   "version": "1.0.0",
-  "description": "ResumeAI — AI-Powered ATS Resume Optimization Platform",
+  "description": "AI ATS Resume Optimizer — AI-Powered Resume Scoring & Optimization Platform",
   "main": "server/server.js",
   "scripts": {
     "server": "npm --prefix server start",

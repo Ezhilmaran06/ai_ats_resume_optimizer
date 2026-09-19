@@ -1,32 +1,47 @@
-# ResumeAI — AI-Powered ATS Resume Optimization Platform
+# AI ATS Resume Optimizer
 
-> **Create once. Tailor for every job. Apply with confidence.**
+> **Upload Resume → ATS Score → Analyze Role/Job Description → Match Resume with Role → AI Resume Editor → Improve ATS Score → Download Optimized Resume**
 
-ResumeAI is a complete, production-grade web application built to help job seekers create ATS-friendly resumes, extract requirements from job descriptions, identify missing skills without fabricating claims, calculate an explainable ATS Compatibility Score, manage multiple job-specific versions, map out structured learning roadmaps, and practice role-specific interview preparation.
+AI ATS Resume Optimizer is an enterprise-grade platform designed to evaluate resumes against modern Applicant Tracking Systems (ATS), extract and parse job description requirements, match skills without hallucination or fabrication, edit resumes interactively in an A4 live editor, improve ATS scores, and export ATS-compliant resumes.
 
 ---
 
-## 🌟 Core Product Workflow & Ethics
+## 🌟 Core Product Workflow
 
 ```text
-MASTER PROFILE (Verified Source of Truth)
-        ↓
-UPLOAD OR PASTE JOB DESCRIPTION
-        ↓
-AI JOB DESCRIPTION ANALYSIS
-(Extracts: Skills, Tools, Cloud, Responsibilities, Priority levels)
-        ↓
-SEMANTIC MATCHING ENGINE
-(Matched ✓ / Partial ⚠ / Missing ✕)
-        ↓
-AI RESUME TAILORING (with Anti-Fabrication Constraints)
-        ↓
-7-CATEGORY ATS COMPATIBILITY DIAGNOSTIC
-(Score /100 + Strengths + Detected Warnings)
-        ↓
-USER REVIEW (Accept / Reject / Edit Diff)
-        ↓
-EXPORT (A4 PDF, DOCX, TXT) + INTERVIEW PREPARATION
+UPLOAD RESUME
+     ↓
+ATS SCORE & DIAGNOSTIC
+     ↓
+ANALYZE ROLE / JOB DESCRIPTION
+     ↓
+MATCH RESUME WITH ROLE (Skill & Keyword Alignment)
+     ↓
+AI RESUME EDITOR (Live 3-Panel Interactive Editor)
+     ↓
+IMPROVE ATS SCORE
+     ↓
+DOWNLOAD OPTIMIZED RESUME (A4 PDF / DOCX / TXT)
+```
+
+---
+
+## 🏗️ Project Architecture
+
+The application is structured into three dedicated tiers:
+
+- **`client/`**: React 18 + Vite frontend with vanilla CSS design system and Lucide React icons.
+- **`server/`**: Node.js + Express backend providing authentication, database persistence, and application APIs.
+- **`ai-service/`**: Python + FastAPI microservice dedicated to ATS parsing, semantic extraction, and scoring algorithms.
+
+```text
+ai_ats_resume_optimizer/
+├── client/          # Frontend application (React, Vite)
+├── server/          # Backend application API (Express, Mongoose)
+├── ai-service/      # AI/NLP Microservice (Python, FastAPI)
+├── .env.example     # Environment variables blueprint
+├── .gitignore       # Git ignore rules
+└── package.json     # Workspace management scripts
 ```
 
 ### 🛡️ The Anti-Fabrication Guarantee
