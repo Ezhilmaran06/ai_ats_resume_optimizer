@@ -16,27 +16,54 @@ export default function RegisterPage() {
   const { addToast } = useToast();
   const navigate = useNavigate();
 
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validate = () => {
+    const errors = {};
+    if (!name.trim()) {
+      errors.name = 'Full name is required.';
+    } else if (name.trim().length < 2) {
+      errors.name = 'Full name must be at least 2 characters.';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      errors.email = 'Email address is required.';
+    } else if (!emailRegex.test(email.trim())) {
+      errors.email = 'Please enter a valid email address.';
+    }
+
+    if (!password) {
+      errors.password = 'Password is required.';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters.';
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Confirm password is required.';
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!validate()) {
       return;
     }
 
     setLoading(true);
     try {
-      await register(name, email, password, confirmPassword);
-      addToast('Account created successfully! Welcome to ResumeAI.', 'success');
-      navigate('/dashboard/profile');
+      await register(name.trim(), email.trim().toLowerCase(), password, confirmPassword);
+      addToast('Account created successfully! Welcome to AI ATS Resume Optimizer.', 'success');
+      navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || 'Registration failed. Please check your details and try again.');
     } finally {
       setLoading(false);
     }
@@ -92,8 +119,17 @@ export default function RegisterPage() {
               className="form-input"
               placeholder="e.g. Alex Morgan"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: null }));
+              }}
+              style={fieldErrors.name ? { borderColor: 'var(--danger)' } : {}}
             />
+            {fieldErrors.name && (
+              <span style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px', display: 'block' }}>
+                {fieldErrors.name}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -104,8 +140,17 @@ export default function RegisterPage() {
               className="form-input"
               placeholder="alex@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: null }));
+              }}
+              style={fieldErrors.email ? { borderColor: 'var(--danger)' } : {}}
             />
+            {fieldErrors.email && (
+              <span style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px', display: 'block' }}>
+                {fieldErrors.email}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -116,8 +161,17 @@ export default function RegisterPage() {
               className="form-input"
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: null }));
+              }}
+              style={fieldErrors.password ? { borderColor: 'var(--danger)' } : {}}
             />
+            {fieldErrors.password && (
+              <span style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px', display: 'block' }}>
+                {fieldErrors.password}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -128,8 +182,17 @@ export default function RegisterPage() {
               className="form-input"
               placeholder="••••••••"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                if (fieldErrors.confirmPassword) setFieldErrors(prev => ({ ...prev, confirmPassword: null }));
+              }}
+              style={fieldErrors.confirmPassword ? { borderColor: 'var(--danger)' } : {}}
             />
+            {fieldErrors.confirmPassword && (
+              <span style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '4px', display: 'block' }}>
+                {fieldErrors.confirmPassword}
+              </span>
+            )}
           </div>
 
           <button

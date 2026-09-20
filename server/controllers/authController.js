@@ -7,25 +7,46 @@ const Activity = require('../models/Activity');
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const fullName = (req.body.fullName || req.body.name || '').trim();
+    const email = (req.body.email || '').trim().toLowerCase();
+    const { password, confirmPassword } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide name, email, and password.' });
+    // Field-level validation
+    if (!fullName) {
+      return res.status(400).json({ success: false, message: 'Full name is required.' });
     }
 
-    if (confirmPassword && password !== confirmPassword) {
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required.' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: 'Password is required.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
+    }
+
+    if (confirmPassword !== undefined && password !== confirmPassword) {
       return res.status(400).json({ success: false, message: 'Passwords do not match.' });
     }
 
     // Check if email is already taken
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const existing = await User.findOne({ email });
     if (existing) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
     }
 
+    // Create user (password will be hashed via UserSchema pre-save hook using bcrypt)
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
+      name: fullName,
+      email,
       password
     });
 
