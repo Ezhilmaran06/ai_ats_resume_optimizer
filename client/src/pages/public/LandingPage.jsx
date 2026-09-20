@@ -5,14 +5,16 @@ import {
   Sparkles,
   Gauge,
   Compass,
-  MessageSquare,
   ShieldCheck,
   CheckCircle2,
   ArrowRight,
-  Search,
-  Sliders,
+  Upload,
   Layers,
-  Award
+  FileCheck,
+  Sliders,
+  Award,
+  Zap,
+  Check
 } from 'lucide-react';
 import styles from './LandingPage.module.css';
 
@@ -20,30 +22,29 @@ export default function LandingPage() {
   return (
     <div>
       {/* 1. HERO SECTION */}
-      <section className={styles.heroSection}>
+      <section id="hero" className={styles.heroSection}>
         <div className={styles.heroContent}>
           <div className={styles.heroPill}>
             <ShieldCheck size={16} />
-            <span>Guaranteed Zero AI Experience Fabrication</span>
+            <span>AI ATS Resume Optimizer</span>
           </div>
 
           <h1 className={styles.heroTitle}>
-            Build Resumes That Match the Job.<br />
-            <span className={styles.heroHighlight}>Powered by AI.</span>
+            Optimize Your Resume for Every Job.
           </h1>
 
           <p className={styles.heroSubtitle}>
-            Create ATS-friendly resumes, analyze job descriptions, discover skill gaps, and tailor your resume for every job opportunity.
+            Analyze your resume, measure ATS compatibility, identify role-specific gaps, and improve your resume with AI.
           </p>
 
           <div className={styles.heroActions}>
             <Link to="/register" className="btn btn-primary btn-lg">
-              Build My Resume
-              <ArrowRight size={18} />
+              <Upload size={18} />
+              <span>Upload Resume</span>
             </Link>
-            <Link to="/login" className="btn btn-secondary btn-lg">
-              Analyze a Job
-              <Search size={18} />
+            <Link to="/register" className="btn btn-secondary btn-lg">
+              <Sparkles size={18} />
+              <span>Optimize for a Role</span>
             </Link>
           </div>
 
@@ -61,8 +62,8 @@ export default function LandingPage() {
               <div className={styles.heroStatLabel}>ATS-Safe Clean Templates</div>
             </div>
             <div className={styles.heroStatItem}>
-              <div className={styles.heroStatNum}>30-90s</div>
-              <div className={styles.heroStatLabel}>Interview Pitch Generators</div>
+              <div className={styles.heroStatNum}>0%</div>
+              <div className={styles.heroStatLabel}>Hallucinated Experience</div>
             </div>
           </div>
         </div>
@@ -71,128 +72,98 @@ export default function LandingPage() {
       {/* 2. HOW IT WORKS */}
       <section id="how-it-works" className={styles.section}>
         <div className={styles.sectionHeader}>
-          <div className={styles.sectionBadge}>End-to-End Workflow</div>
-          <h2 className={styles.sectionTitle}>How ResumeAI Works</h2>
+          <div className={styles.sectionBadge}>Streamlined Workflow</div>
+          <h2 className={styles.sectionTitle}>How It Works</h2>
           <p className={styles.sectionSubtitle}>
-            From verified profile to job-specific ATS-tailored resume in four transparent steps.
+            A transparent 4-step process to optimize your resume for automated applicant tracking systems.
           </p>
         </div>
 
         <div className={styles.workflowGrid}>
           <div className={styles.workflowStep}>
             <div className={styles.stepNum}>1</div>
-            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>Master Profile</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>Upload Resume</h3>
             <p style={{ fontSize: '13.5px', color: '#64748B', lineHeight: '1.5' }}>
-              Create your verified source of truth: real skills, projects, verified education, and quantified work experience.
+              Upload your existing PDF or DOCX resume, or initialize your verified Master Profile as your single source of truth.
             </p>
           </div>
 
           <div className={styles.workflowStep}>
             <div className={styles.stepNum}>2</div>
-            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>AI JD Analyzer</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>ATS Score & Role Analysis</h3>
             <p style={{ fontSize: '13.5px', color: '#64748B', lineHeight: '1.5' }}>
-              Paste or upload any job description. AI extracts required languages, frameworks, cloud tools, and responsibilities.
+              Get an instant 7-part ATS compatibility breakdown and paste your target job description to extract core competencies.
             </p>
           </div>
 
           <div className={styles.workflowStep}>
             <div className={styles.stepNum}>3</div>
-            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>Matching & Tailoring</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>AI Resume Optimization</h3>
             <p style={{ fontSize: '13.5px', color: '#64748B', lineHeight: '1.5' }}>
-              AI aligns your authentic achievements to target requirements. Review and accept suggestions before anything changes.
+              Align verified bullet points with target requirements using AI suggestions that never hallucinate fake experience.
             </p>
           </div>
 
           <div className={styles.workflowStep}>
             <div className={styles.stepNum}>4</div>
-            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>ATS Score & Export</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '600' }}>Final Score & Download</h3>
             <p style={{ fontSize: '13.5px', color: '#64748B', lineHeight: '1.5' }}>
-              Get a 7-part ATS compatibility breakdown, practice interview questions, and download as clean PDF or DOCX.
+              Review your improved ATS score, verify formatting compliance, and download clean, machine-parseable PDF or DOCX files.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 3. CORE FEATURES */}
-      <section id="features" className={styles.section} style={{ backgroundColor: '#F8FAFC' }}>
+      {/* 3. ATS ANALYSIS */}
+      <section id="ats-analysis" className={styles.section} style={{ backgroundColor: '#F8FAFC' }}>
         <div className={styles.sectionHeader}>
-          <div className={styles.sectionBadge}>Engineered for Results</div>
-          <h2 className={styles.sectionTitle}>Every Tool Needed for Modern Applications</h2>
+          <div className={styles.sectionBadge}>Deep Machine Readability</div>
+          <h2 className={styles.sectionTitle}>Comprehensive ATS Analysis</h2>
           <p className={styles.sectionSubtitle}>
-            A complete job optimization suite that prioritizes truthfulness and applicant control over keyword stuffing.
+            Simulate how enterprise applicant tracking systems (Workday, Greenhouse, Lever, Taleo) evaluate your resume.
           </p>
         </div>
 
         <div className={styles.grid3}>
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
-              <Sparkles size={22} />
-            </div>
-            <h3 className={styles.featureTitle}>AI Resume Tailoring</h3>
-            <p className={styles.featureDesc}>
-              Tailors bullet points, reorders relevant sections, and highlights verified competencies to align directly with job criteria.
-            </p>
-          </div>
-
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
               <Gauge size={22} />
             </div>
-            <h3 className={styles.featureTitle}>ATS Compatibility Analyzer</h3>
+            <h3 className={styles.featureTitle}>7-Factor ATS Rubric</h3>
             <p className={styles.featureDesc}>
-              Calculates a transparent score across 7 categories: Keyword Relevance, Skills Match, Job Relevance, Structure, Completeness, Readability, and Formatting.
+              Detailed scoring across Keyword Relevance, Skills Match, Role Alignment, Section Structure, Profile Completeness, Readability, and Formatting.
             </p>
           </div>
 
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
-              <Compass size={22} />
+              <FileCheck size={22} />
             </div>
-            <h3 className={styles.featureTitle}>Skill Gap & Roadmaps</h3>
+            <h3 className={styles.featureTitle}>Section Header Parsing</h3>
             <p className={styles.featureDesc}>
-              Pinpoints missing requirements (Critical, Important, Nice-to-have) and generates realistic learning roadmaps with suggested projects.
+              Validates that standard section headings (Experience, Education, Skills, Projects) are recognized cleanly by automated document parsers.
             </p>
           </div>
 
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>
-              <Layers size={22} />
+              <Zap size={22} />
             </div>
-            <h3 className={styles.featureTitle}>Resume Version Manager</h3>
+            <h3 className={styles.featureTitle}>Action Verb & Impact Audit</h3>
             <p className={styles.featureDesc}>
-              Keep separate tailored resumes for each target company. Visually diff changes against your Master Profile with one click.
-            </p>
-          </div>
-
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
-              <MessageSquare size={22} />
-            </div>
-            <h3 className={styles.featureTitle}>Interview Preparation</h3>
-            <p className={styles.featureDesc}>
-              Generates technical questions from the JD and project questions strictly grounded in your actual projects, plus 30s/60s/90s elevator pitches.
-            </p>
-          </div>
-
-          <div className={styles.featureCard}>
-            <div className={styles.featureIcon}>
-              <Sliders size={22} />
-            </div>
-            <h3 className={styles.featureTitle}>Application Pipeline Tracker</h3>
-            <p className={styles.featureDesc}>
-              Track status from Saved to Applied, Interview, and Offer. Connect which resume version was submitted with associated ATS score.
+              Identifies weak or passive phrasing and suggests high-impact action verbs and quantified metric structures for maximum recruiter appeal.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 4. ANTI-FABRICATION PRINCIPLE */}
-      <section id="anti-fabrication" className={styles.section}>
+      {/* 4. AI RESUME OPTIMIZATION */}
+      <section id="ai-optimization" className={styles.section}>
         <div className={styles.sectionHeader}>
-          <div className={styles.sectionBadge}>Ethical AI Policy</div>
-          <h2 className={styles.sectionTitle}>The Anti-Fabrication Guarantee</h2>
+          <div className={styles.sectionBadge}>Ethical AI Engine</div>
+          <h2 className={styles.sectionTitle}>AI Resume Optimization</h2>
           <p className={styles.sectionSubtitle}>
-            Most AI tools hallucinate skills you don't have. ResumeAI strictly forbids it.
+            Enhance your bullet points and professional summary without hallucinating skills or companies you never had.
           </p>
         </div>
 
@@ -200,40 +171,83 @@ export default function LandingPage() {
           <ShieldCheck size={40} color="#2563EB" style={{ flexShrink: 0 }} />
           <div>
             <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#0F172A' }}>
-              We Never Fabricate User Experience
+              Zero AI Experience Fabrication
             </h3>
             <p style={{ fontSize: '15px', color: '#334155', lineHeight: '1.6', marginBottom: '16px' }}>
-              If a job posting requires a skill (such as AWS or Kubernetes) that is not in your verified Master Profile, ResumeAI flags it explicitly as <strong style={{ color: '#EF4444' }}>MISSING</strong>. We will NEVER silently invent tools, metrics, degrees, or companies. You stay in control of every suggestion.
+              Unlike generic AI tools that invent fake credentials, our optimizer uses your verified Master Profile as ground truth. We highlight missing keywords honestly and only suggest truthful bullet improvements based on your real experience.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#0F172A' }}>
                 <CheckCircle2 size={16} color="#10B981" />
-                <span>Zero hallucinated job titles</span>
+                <span>Zero hallucinated skills or tools</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#0F172A' }}>
                 <CheckCircle2 size={16} color="#10B981" />
-                <span>Zero fake project metrics</span>
+                <span>Zero fabricated metrics or roles</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#0F172A' }}>
                 <CheckCircle2 size={16} color="#10B981" />
-                <span>User reviews every bullet diff</span>
+                <span>Side-by-side diff review for every change</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#0F172A' }}>
                 <CheckCircle2 size={16} color="#10B981" />
-                <span>Verified profile source-of-truth</span>
+                <span>Full applicant ownership & control</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. TEMPLATES PREVIEW */}
-      <section id="templates" className={styles.section} style={{ backgroundColor: '#F8FAFC' }}>
+      {/* 5. ROLE MATCHING */}
+      <section id="role-matching" className={styles.section} style={{ backgroundColor: '#F8FAFC' }}>
         <div className={styles.sectionHeader}>
-          <div className={styles.sectionBadge}>Machine-Parseable Layouts</div>
-          <h2 className={styles.sectionTitle}>6 Professional ATS-Safe Templates</h2>
+          <div className={styles.sectionBadge}>Job-Specific Alignment</div>
+          <h2 className={styles.sectionTitle}>Role Matching & Gap Detection</h2>
           <p className={styles.sectionSubtitle}>
-            Designed to pass modern enterprise parsers (Workday, Greenhouse, Lever, Taleo) without graphic errors.
+            Compare your resume directly against any target role to uncover critical keyword and qualification gaps.
+          </p>
+        </div>
+
+        <div className={styles.grid3}>
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <Compass size={22} />
+            </div>
+            <h3 className={styles.featureTitle}>Skill & Keyword Mapping</h3>
+            <p className={styles.featureDesc}>
+              Instantly maps required skills from the job description against your verified resume competencies to reveal exact alignment.
+            </p>
+          </div>
+
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <Sliders size={22} />
+            </div>
+            <h3 className={styles.featureTitle}>Missing Gap Categorization</h3>
+            <p className={styles.featureDesc}>
+              Separates gaps into Critical, Important, and Nice-to-Have so you know exactly which verified experiences to highlight.
+            </p>
+          </div>
+
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>
+              <Layers size={22} />
+            </div>
+            <h3 className={styles.featureTitle}>Tailored Resume Versions</h3>
+            <p className={styles.featureDesc}>
+              Create and manage distinct tailored versions of your resume for different roles while keeping your Master Profile synchronized.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. RESUME TEMPLATES */}
+      <section id="templates" className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionBadge}>ATS-Safe Layouts</div>
+          <h2 className={styles.sectionTitle}>Machine-Parseable Resume Templates</h2>
+          <p className={styles.sectionSubtitle}>
+            Single-column, cleanly structured templates engineered to pass ATS parsers without formatting glitches or lost text.
           </p>
         </div>
 
@@ -241,8 +255,8 @@ export default function LandingPage() {
           {[
             { id: 'ats-classic', title: 'ATS Classic', desc: 'Standard single-column layout with clean standard headers. Guaranteed maximum machine parseability.', badge: 'ATS Safe' },
             { id: 'modern-pro', title: 'Modern Professional', desc: 'Crisp divider lines, balanced typography hierarchy, and subtle corporate styling.', badge: 'Popular' },
-            { id: 'swe', title: 'Software Engineer', desc: 'Emphasizes technical skills, open-source repositories, and system architecture projects.', badge: 'Recommended' },
-            { id: 'fresh-grad', title: 'Fresh Graduate', desc: 'Prioritizes academic credentials, coursework, coursework projects, and foundational competencies.', badge: 'Entry Level' },
+            { id: 'swe', title: 'Software Engineer', desc: 'Emphasizes technical skills, programming languages, and system architecture projects.', badge: 'Recommended' },
+            { id: 'fresh-grad', title: 'Fresh Graduate', desc: 'Prioritizes academic credentials, coursework projects, and foundational competencies.', badge: 'Entry Level' },
             { id: 'minimal', title: 'Minimal', desc: 'Ultra-clean typographic layout maximizing whitespace and quick recruiter readability.', badge: 'ATS Safe' },
             { id: 'executive', title: 'Executive', desc: 'Focuses on strategic leadership, cross-functional organizational impact, and business outcomes.', badge: 'Senior' }
           ].map(t => (
@@ -255,25 +269,29 @@ export default function LandingPage() {
                 <p className={styles.featureDesc}>{t.desc}</p>
               </div>
               <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#64748B' }}>A4 PDF & DOCX ready</span>
-                <Link to="/register" className="btn btn-outline btn-sm">Preview</Link>
+                <span style={{ fontSize: '12px', color: '#64748B' }}>PDF & DOCX compliant</span>
+                <Link to="/register" className="btn btn-outline btn-sm">Use Template</Link>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 6. CALL TO ACTION BANNER */}
+      {/* 7. FINAL CTA */}
       <section className={styles.section}>
         <div className={styles.ctaBanner}>
-          <h2 className={styles.ctaTitle}>Ready to Build Your Winning Resume?</h2>
+          <h2 className={styles.ctaTitle}>Ready to Optimize Your Resume for ATS Success?</h2>
           <p className={styles.ctaSubtitle}>
-            Join thousands of software engineers, product managers, and professionals optimizing their resumes with confidence.
+            Analyze your resume, identify gaps for your target role, and optimize your content with AI precision today.
           </p>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/register" className="btn btn-secondary btn-lg" style={{ color: '#2563EB', fontWeight: '700' }}>
-              Get Started for Free
-              <ArrowRight size={18} />
+              <Upload size={18} />
+              <span>Upload Resume</span>
+            </Link>
+            <Link to="/register" className="btn btn-outline btn-lg" style={{ borderColor: '#FFFFFF', color: '#FFFFFF' }}>
+              <Sparkles size={18} />
+              <span>Optimize for a Role</span>
             </Link>
           </div>
         </div>
@@ -281,3 +299,4 @@ export default function LandingPage() {
     </div>
   );
 }
+

@@ -20,11 +20,11 @@ export default function PublicLayout() {
           </Link>
 
           <nav className={styles.navLinks}>
-            <a href="#features" className={styles.navLink}>Features</a>
             <a href="#how-it-works" className={styles.navLink}>How It Works</a>
-            <a href="#ats-engine" className={styles.navLink}>ATS Compatibility</a>
+            <a href="#ats-analysis" className={styles.navLink}>ATS Analysis</a>
+            <a href="#ai-optimization" className={styles.navLink}>AI Optimization</a>
+            <a href="#role-matching" className={styles.navLink}>Role Matching</a>
             <a href="#templates" className={styles.navLink}>Templates</a>
-            <a href="#anti-fabrication" className={styles.navLink}>Zero-Fabrication</a>
           </nav>
 
           <div className={styles.authButtons}>
@@ -39,7 +39,7 @@ export default function PublicLayout() {
                   Log In
                 </Link>
                 <Link to="/register" className="btn btn-primary">
-                  Build My Resume
+                  Upload Resume
                 </Link>
               </>
             )}
@@ -64,7 +64,7 @@ export default function PublicLayout() {
                 <span>ResumeAI</span>
               </div>
               <p style={{ fontSize: '14px', lineHeight: '1.6', maxWidth: '320px', marginBottom: '16px' }}>
-                The ethical AI-powered ATS resume builder and job tailoring platform. Create once. Tailor for every job. Apply with confidence.
+                AI ATS Resume Optimizer — Analyze compatibility, close role-specific gaps, and optimize your resume for automated screening with zero fabrication.
               </p>
               <div className="badge badge-success" style={{ gap: '6px' }}>
                 <ShieldCheck size={14} />
@@ -73,30 +73,30 @@ export default function PublicLayout() {
             </div>
 
             <div>
-              <h4 className={styles.footerColTitle}>Product</h4>
+              <h4 className={styles.footerColTitle}>ATS Optimization</h4>
               <ul className={styles.footerColList}>
-                <li><a href="#features">AI Job Matching</a></li>
-                <li><a href="#ats-engine">ATS Analyzer</a></li>
+                <li><a href="#ats-analysis">ATS Score Analyzer</a></li>
+                <li><a href="#ai-optimization">AI Resume Optimizer</a></li>
+                <li><a href="#role-matching">Role Gap Detection</a></li>
                 <li><a href="#templates">ATS-Safe Templates</a></li>
-                <li><a href="#how-it-works">Skill Gap Analysis</a></li>
-                <li><a href="#interview">Interview Prep</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
               </ul>
             </div>
 
             <div>
-              <h4 className={styles.footerColTitle}>Resources</h4>
+              <h4 className={styles.footerColTitle}>Standards</h4>
               <ul className={styles.footerColList}>
-                <li><a href="#ats-engine">ATS Scoring Rubric</a></li>
-                <li><a href="#anti-fabrication">Anti-Fabrication Rules</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#careers">Career Roadmap</a></li>
+                <li><a href="#ats-analysis">7-Factor ATS Rubric</a></li>
+                <li><a href="#ai-optimization">Zero-Fabrication Policy</a></li>
+                <li><a href="#templates">Parser Compliance</a></li>
+                <li><Link to="/register">Candidate Registration</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className={styles.footerColTitle}>Account</h4>
               <ul className={styles.footerColList}>
-                <li><Link to="/login">Candidate Login</Link></li>
+                <li><Link to="/login">Sign In</Link></li>
                 <li><Link to="/register">Create Account</Link></li>
                 <li><Link to="/dashboard">Dashboard</Link></li>
               </ul>
@@ -104,7 +104,7 @@ export default function PublicLayout() {
           </div>
 
           <div className={styles.footerBottom}>
-            <div>© {new Date().getFullYear()} ResumeAI Platform. All rights reserved.</div>
+            <div>© {new Date().getFullYear()} ResumeAI ATS Optimizer. All rights reserved.</div>
             <div style={{ display: 'flex', gap: '20px' }}>
               <span>Privacy Policy</span>
               <span>Terms of Service</span>
