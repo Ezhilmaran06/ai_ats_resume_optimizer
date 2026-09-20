@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, LogIn, Sparkles, AlertCircle } from 'lucide-react';
+import { FileText, LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -10,47 +10,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!email.trim() || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email.trim().toLowerCase(), password);
       addToast('Welcome back! Successfully logged in.', 'success');
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // One-click quick demo login/registration for immediate reviewer testing
-  const handleQuickDemo = async () => {
-    setLoading(true);
-    setError('');
-    const demoEmail = 'alex.morgan@resumeai.io';
-    const demoPassword = 'DemoPassword123!';
-
-    try {
-      // Try login first
-      await login(demoEmail, demoPassword);
-      addToast('Logged into Demo Account!', 'success');
-      navigate('/dashboard');
-    } catch (err) {
-      // If demo user does not exist yet in DB, automatically register it!
-      try {
-        await register('Alex Morgan', demoEmail, demoPassword, demoPassword);
-        addToast('Created and logged into Demo Account!', 'success');
-        navigate('/dashboard');
-      } catch (regErr) {
-        setError(regErr.response?.data?.message || 'Could not initialize demo account.');
-      }
     } finally {
       setLoading(false);
     }
@@ -73,39 +53,10 @@ export default function LoginPage() {
           }}>
             <FileText size={24} />
           </div>
-          <h2 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)' }}>Log in to ResumeAI</h2>
+          <h2 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)' }}>Sign In to Resume Optimizer</h2>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            Access your resumes, ATS analyses, and tailored applications
+            Access your ATS resume optimization dashboard and score analyses
           </p>
-        </div>
-
-        {/* Quick Demo Autofill Box */}
-        <div style={{
-          backgroundColor: 'var(--primary-light)',
-          border: '1px solid var(--info-border)',
-          borderRadius: '8px',
-          padding: '14px',
-          marginBottom: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', color: 'var(--primary)' }}>
-            <Sparkles size={16} />
-            <span>Instant Evaluation Mode</span>
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-            Testing or reviewing the application? Click below to instantly sign in with a pre-configured Software Engineer account.
-          </p>
-          <button
-            type="button"
-            onClick={handleQuickDemo}
-            disabled={loading}
-            className="btn btn-primary btn-sm"
-            style={{ width: '100%', marginTop: '4px' }}
-          >
-            {loading ? 'Signing In...' : 'Sign in as Demo User (1-Click)'}
-          </button>
         </div>
 
         {error && (
