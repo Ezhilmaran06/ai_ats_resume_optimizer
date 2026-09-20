@@ -16,7 +16,11 @@ import {
   Save,
   Sparkles,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUp,
+  ArrowDown,
+  Link as LinkIcon,
+  Trophy
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -99,6 +103,20 @@ export default function MasterProfilePage() {
     }
   };
 
+  // Reorder helper for arrays
+  const handleMoveItem = (section, index, direction) => {
+    const list = [...(profile[section] || [])];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+
+    const temp = list[index];
+    list[index] = list[targetIndex];
+    list[targetIndex] = temp;
+
+    const updated = list.map((item, idx) => ({ ...item, order: idx }));
+    setProfile(prev => ({ ...prev, [section]: updated }));
+  };
+
   // Helper for adding skill
   const handleAddSkill = (e) => {
     e.preventDefault();
@@ -165,17 +183,18 @@ export default function MasterProfilePage() {
         </div>
       </div>
 
-      {/* Profile Section Navigation Tabs */}
+      {/* 9 Master Profile Section Navigation Tabs */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', overflowX: 'auto' }}>
         {[
-          { id: 'personal', label: 'Personal & Links' },
-          { id: 'summary', label: 'Summary' },
+          { id: 'personal', label: 'Personal Information' },
+          { id: 'education', label: 'Education' },
           { id: 'skills', label: 'Skills' },
           { id: 'experience', label: 'Experience' },
           { id: 'projects', label: 'Projects' },
-          { id: 'education', label: 'Education' },
           { id: 'certifications', label: 'Certifications' },
-          { id: 'languages', label: 'Languages' }
+          { id: 'achievements', label: 'Achievements' },
+          { id: 'languages', label: 'Languages' },
+          { id: 'links', label: 'Links' }
         ].map(tab => (
           <button
             key={tab.id}
@@ -188,7 +207,8 @@ export default function MasterProfilePage() {
               backgroundColor: activeTab === tab.id ? 'var(--primary-light)' : 'transparent',
               color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
               border: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
             }}
           >
             {tab.label}
@@ -463,16 +483,38 @@ export default function MasterProfilePage() {
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
                   Position #{idx + 1}
                 </span>
-                <button
-                  onClick={() => {
-                    const updated = profile.experience.filter((_, i) => i !== idx);
-                    setProfile({ ...profile, experience: updated });
-                  }}
-                  className="btn btn-danger btn-sm"
-                  style={{ padding: '4px 8px' }}
-                >
-                  <Trash2 size={14} /> Remove
-                </button>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveItem('experience', idx, -1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === (profile.experience?.length || 0) - 1}
+                    onClick={() => handleMoveItem('experience', idx, 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = profile.experience.filter((_, i) => i !== idx);
+                      setProfile({ ...profile, experience: updated });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} /> Remove
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -600,16 +642,38 @@ export default function MasterProfilePage() {
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
                   Project #{idx + 1}: {proj.name}
                 </span>
-                <button
-                  onClick={() => {
-                    const updated = profile.projects.filter((_, i) => i !== idx);
-                    setProfile({ ...profile, projects: updated });
-                  }}
-                  className="btn btn-danger btn-sm"
-                  style={{ padding: '4px 8px' }}
-                >
-                  <Trash2 size={14} /> Remove
-                </button>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveItem('projects', idx, -1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === (profile.projects?.length || 0) - 1}
+                    onClick={() => handleMoveItem('projects', idx, 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = profile.projects.filter((_, i) => i !== idx);
+                      setProfile({ ...profile, projects: updated });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} /> Remove
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -737,16 +801,38 @@ export default function MasterProfilePage() {
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
                   Institution #{idx + 1}
                 </span>
-                <button
-                  onClick={() => {
-                    const updated = profile.education.filter((_, i) => i !== idx);
-                    setProfile({ ...profile, education: updated });
-                  }}
-                  className="btn btn-danger btn-sm"
-                  style={{ padding: '4px 8px' }}
-                >
-                  <Trash2 size={14} /> Remove
-                </button>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveItem('education', idx, -1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === (profile.education?.length || 0) - 1}
+                    onClick={() => handleMoveItem('education', idx, 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = profile.education.filter((_, i) => i !== idx);
+                      setProfile({ ...profile, education: updated });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} /> Remove
+                  </button>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -813,7 +899,7 @@ export default function MasterProfilePage() {
         </div>
       )}
 
-      {/* TAB 7: CERTIFICATIONS */}
+      {/* TAB: CERTIFICATIONS */}
       {activeTab === 'certifications' && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -840,28 +926,163 @@ export default function MasterProfilePage() {
           </div>
 
           {(profile.certifications || []).map((cert, idx) => (
-            <div key={idx} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={idx} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <div style={{ fontWeight: '600', fontSize: '14px' }}>{cert.name}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                   {cert.issuer} • Issued {cert.date}
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  const updated = profile.certifications.filter((_, i) => i !== idx);
-                  setProfile({ ...profile, certifications: updated });
-                }}
-                className="btn btn-danger btn-sm"
-              >
-                <Trash2 size={14} />
-              </button>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  disabled={idx === 0}
+                  onClick={() => handleMoveItem('certifications', idx, -1)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '4px 8px' }}
+                  title="Move Up"
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button
+                  type="button"
+                  disabled={idx === (profile.certifications?.length || 0) - 1}
+                  onClick={() => handleMoveItem('certifications', idx, 1)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '4px 8px' }}
+                  title="Move Down"
+                >
+                  <ArrowDown size={14} />
+                </button>
+                <button
+                  onClick={() => {
+                    const updated = profile.certifications.filter((_, i) => i !== idx);
+                    setProfile({ ...profile, certifications: updated });
+                  }}
+                  className="btn btn-danger btn-sm"
+                  style={{ padding: '4px 8px' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* TAB 8: LANGUAGES */}
+      {/* TAB: ACHIEVEMENTS */}
+      {activeTab === 'achievements' && (
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Key Achievements & Honors</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                Awards, competitive hackathon wins, scholarships, or notable recognitions.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const newAch = {
+                  title: 'New Achievement / Award',
+                  description: 'Description of the honor or achievement.',
+                  date: '2024'
+                };
+                setProfile({ ...profile, achievements: [newAch, ...(profile.achievements || [])] });
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              <Plus size={14} /> Add Achievement
+            </button>
+          </div>
+
+          {(profile.achievements || []).map((ach, idx) => (
+            <div key={idx} style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)' }}>
+                  Achievement #{idx + 1}
+                </span>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveItem('achievements', idx, -1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === (profile.achievements?.length || 0) - 1}
+                    onClick={() => handleMoveItem('achievements', idx, 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = profile.achievements.filter((_, i) => i !== idx);
+                      setProfile({ ...profile, achievements: updated });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} /> Remove
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Honor / Achievement Title</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={ach.title || ''}
+                    onChange={(e) => {
+                      const updated = [...profile.achievements];
+                      updated[idx].title = e.target.value;
+                      setProfile({ ...profile, achievements: updated });
+                    }}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Date / Year</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={ach.date || ''}
+                    onChange={(e) => {
+                      const updated = [...profile.achievements];
+                      updated[idx].date = e.target.value;
+                      setProfile({ ...profile, achievements: updated });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea
+                  rows={2}
+                  className="form-input"
+                  value={ach.description || ''}
+                  onChange={(e) => {
+                    const updated = [...profile.achievements];
+                    updated[idx].description = e.target.value;
+                    setProfile({ ...profile, achievements: updated });
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* TAB: LANGUAGES */}
       {activeTab === 'languages' && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -880,20 +1101,161 @@ export default function MasterProfilePage() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {(profile.languages || []).map((lang, idx) => (
-              <div key={idx} style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontWeight: '600', fontSize: '13px' }}>{lang.language}</span>
-                <span className="badge badge-info">{lang.proficiency}</span>
-                <button
-                  onClick={() => {
-                    const updated = profile.languages.filter((_, i) => i !== idx);
-                    setProfile({ ...profile, languages: updated });
-                  }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                >
-                  ×
-                </button>
+              <div key={idx} style={{ padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ width: '160px' }}
+                    value={lang.language || ''}
+                    onChange={(e) => {
+                      const updated = [...profile.languages];
+                      updated[idx].language = e.target.value;
+                      setProfile({ ...profile, languages: updated });
+                    }}
+                  />
+                  <select
+                    className="form-input"
+                    style={{ width: '160px' }}
+                    value={lang.proficiency || 'Professional'}
+                    onChange={(e) => {
+                      const updated = [...profile.languages];
+                      updated[idx].proficiency = e.target.value;
+                      setProfile({ ...profile, languages: updated });
+                    }}
+                  >
+                    <option value="Native">Native</option>
+                    <option value="Fluent">Fluent</option>
+                    <option value="Professional">Professional</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Elementary">Elementary</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveItem('languages', idx, -1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === (profile.languages?.length || 0) - 1}
+                    onClick={() => handleMoveItem('languages', idx, 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updated = profile.languages.filter((_, i) => i !== idx);
+                      setProfile({ ...profile, languages: updated });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: LINKS */}
+      {activeTab === 'links' && (
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Professional Links</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                Portfolio, GitHub, LinkedIn, technical blogs, or open-source repositories.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const newLink = { label: 'Portfolio', url: 'https://' };
+                const current = profile.links || profile.personalInfo?.otherLinks || [];
+                setProfile({ ...profile, links: [newLink, ...current] });
+              }}
+              className="btn btn-secondary btn-sm"
+            >
+              <Plus size={14} /> Add Link
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {((profile.links && profile.links.length > 0) ? profile.links : (profile.personalInfo?.otherLinks || [])).map((link, idx) => (
+              <div key={idx} style={{ padding: '12px 14px', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '12px', flex: 1, minWidth: '240px' }}>
+                  <input
+                    type="text"
+                    placeholder="Label (e.g. Portfolio)"
+                    className="form-input"
+                    style={{ width: '150px' }}
+                    value={link.label || ''}
+                    onChange={(e) => {
+                      const currentLinks = [...(profile.links || profile.personalInfo?.otherLinks || [])];
+                      currentLinks[idx] = { ...currentLinks[idx], label: e.target.value };
+                      setProfile({ ...profile, links: currentLinks });
+                    }}
+                  />
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    className="form-input"
+                    style={{ flex: 1 }}
+                    value={link.url || ''}
+                    onChange={(e) => {
+                      const currentLinks = [...(profile.links || profile.personalInfo?.otherLinks || [])];
+                      currentLinks[idx] = { ...currentLinks[idx], url: e.target.value };
+                      setProfile({ ...profile, links: currentLinks });
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => handleMoveItem('links', idx, -1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Up"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === ((profile.links && profile.links.length) || (profile.personalInfo?.otherLinks?.length) || 0) - 1}
+                    onClick={() => handleMoveItem('links', idx, 1)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Move Down"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const currentLinks = (profile.links || profile.personalInfo?.otherLinks || []).filter((_, i) => i !== idx);
+                      setProfile({ ...profile, links: currentLinks });
+                    }}
+                    className="btn btn-danger btn-sm"
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

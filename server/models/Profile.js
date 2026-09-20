@@ -29,7 +29,8 @@ const ProfileSchema = new mongoose.Schema({
     startDate: { type: String, default: '' },
     endDate: { type: String, default: '' },
     cgpa: { type: String, default: '' },
-    description: { type: String, default: '' }
+    description: { type: String, default: '' },
+    order: { type: Number, default: 0 }
   }],
   skills: {
     programmingLanguages: [{ type: String }],
@@ -49,7 +50,8 @@ const ProfileSchema = new mongoose.Schema({
     currentlyWorking: { type: Boolean, default: false },
     description: { type: String, default: '' },
     achievements: [{ type: String }],
-    technologies: [{ type: String }]
+    technologies: [{ type: String }],
+    order: { type: Number, default: 0 }
   }],
   projects: [{
     name: { type: String, required: true },
@@ -58,18 +60,21 @@ const ProfileSchema = new mongoose.Schema({
     role: { type: String, default: '' },
     projectUrl: { type: String, default: '' },
     githubUrl: { type: String, default: '' },
-    achievements: [{ type: String }]
+    achievements: [{ type: String }],
+    order: { type: Number, default: 0 }
   }],
   certifications: [{
     name: { type: String, required: true },
     issuer: { type: String, required: true },
     date: { type: String, default: '' },
-    credentialUrl: { type: String, default: '' }
+    credentialUrl: { type: String, default: '' },
+    order: { type: Number, default: 0 }
   }],
   achievements: [{
     title: { type: String, required: true },
     description: { type: String, default: '' },
-    date: { type: String, default: '' }
+    date: { type: String, default: '' },
+    order: { type: Number, default: 0 }
   }],
   languages: [{
     language: { type: String, required: true },
@@ -77,7 +82,13 @@ const ProfileSchema = new mongoose.Schema({
       type: String,
       enum: ['Native', 'Fluent', 'Professional', 'Intermediate', 'Elementary'],
       default: 'Professional'
-    }
+    },
+    order: { type: Number, default: 0 }
+  }],
+  links: [{
+    label: { type: String, default: '' },
+    url: { type: String, default: '' },
+    order: { type: Number, default: 0 }
   }],
   updatedAt: {
     type: Date,

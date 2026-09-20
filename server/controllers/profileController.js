@@ -149,7 +149,7 @@ exports.updateProfile = async (req, res, next) => {
     }
 
     // Merge provided fields
-    const allowedFields = ['personalInfo', 'summary', 'education', 'skills', 'experience', 'projects', 'certifications', 'achievements', 'languages'];
+    const allowedFields = ['personalInfo', 'summary', 'education', 'skills', 'experience', 'projects', 'certifications', 'achievements', 'languages', 'links'];
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
         profile[field] = req.body[field];
@@ -168,6 +168,145 @@ exports.updateProfile = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      data: profile
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Add item to a profile section
+// @route   POST /api/profile/section/:sectionName
+// @access  Private
+exports.addSectionItem = async (req, res, next) => {
+  try {
+    const { sectionName } = req.params;
+    const validSections = ['education', 'experience', 'projects', 'certifications', 'achievements', 'languages', 'links'];
+    if (!validSections.includes(sectionName)) {
+      return res.status(400).json({ success: false, message: `Invalid profile section: ${sectionName}` });
+    }
+
+    let profile = await Profile.findOne({ user: req.user.id });
+    if (!profile) {
+      profile = new Profile({ user: req.user.id });
+    }
+
+    if (!Array.isArray(profile[sectionName])) {
+      profile[sectionName] = [];
+    }
+
+    const newItem = { ...req.body, order: profile[sectionName].length };
+    profile[sectionName].push(newItem);
+    profile.updatedAt = Date.now();
+    await profile.save();
+
+    res.status(201).json({
+      success: true,
+      message: `Added item to ${sectionName}`,
+      data: profile
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Update item in a profile section
+// @route   PUT /api/profile/section/:sectionName/:itemId
+// @access  Private
+exports.updateSectionItem = async (req, res, next) => {
+  try {
+    const { sectionName, itemId } = req.params;
+    const validSections = ['education', 'experience', 'projects', 'certifications', 'achievements', 'languages', 'links'];
+    if (!validSections.includes(sectionName)) {
+      return res.status(400).json({ success: false, message: `Invalid profile section: ${sectionName}` });
+    }
+
+    const profile = await Profile.findOne({ user: req.user.id });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    const item = profile[sectionName].id(itemId);
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Item not found in section' });
+    }
+
+    Object.assign(item, req.body);
+    profile.updatedAt = Date.now();
+    await profile.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Updated item in ${sectionName}`,
+      data: profile
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Delete item from a profile section
+// @route   DELETE /api/profile/section/:sectionName/:itemId
+// @access  Private
+exports.deleteSectionItem = async (req, res, next) => {
+  try {
+    const { sectionName, itemId } = req.params;
+    const validSections = ['education', 'experience', 'projects', 'certifications', 'achievements', 'languages', 'links'];
+    if (!validSections.includes(sectionName)) {
+      return res.status(400).json({ success: false, message: `Invalid profile section: ${sectionName}` });
+    }
+
+    const profile = await Profile.findOne({ user: req.user.id });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    profile[sectionName] = profile[sectionName].filter(item => item._id.toString() !== itemId);
+    profile.updatedAt = Date.now();
+    await profile.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Deleted item from ${sectionName}`,
+      data: profile
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Reorder items in a profile section
+// @route   PUT /api/profile/section/:sectionName/reorder
+// @access  Private
+exports.reorderSectionItems = async (req, res, next) => {
+  try {
+    const { sectionName } = req.params;
+    const { items } = req.body;
+    const validSections = ['education', 'experience', 'projects', 'certifications', 'achievements', 'languages', 'links'];
+    if (!validSections.includes(sectionName)) {
+      return res.status(400).json({ success: false, message: `Invalid profile section: ${sectionName}` });
+    }
+
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ success: false, message: 'Items array is required for reordering' });
+    }
+
+    const profile = await Profile.findOne({ user: req.user.id });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Profile not found' });
+    }
+
+    profile[sectionName] = items.map((item, idx) => ({
+      ...item,
+      order: idx
+    }));
+
+    profile.updatedAt = Date.now();
+    await profile.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Reordered ${sectionName} successfully`,
       data: profile
     });
   } catch (err) {
