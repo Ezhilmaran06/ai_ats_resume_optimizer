@@ -27,6 +27,7 @@ export default function DashboardOverview() {
   const { addToast } = useToast();
   const fileInputRef = useRef(null);
 
+  const [profile, setProfile] = useState(null);
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -48,12 +49,19 @@ export default function DashboardOverview() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/resumes');
-      if (res.data.success) {
-        setResumes(res.data.data);
+      const [resumesRes, profileRes] = await Promise.allSettled([
+        api.get('/resumes'),
+        api.get('/profile')
+      ]);
+
+      if (resumesRes.status === 'fulfilled' && resumesRes.value.data.success) {
+        setResumes(resumesRes.value.data.data || []);
+      }
+      if (profileRes.status === 'fulfilled' && profileRes.value.data.success) {
+        setProfile(profileRes.value.data.data || null);
       }
     } catch (err) {
-      console.error('Failed to load resumes:', err);
+      console.error('Failed to load dashboard data:', err);
     } finally {
       setLoading(false);
     }
@@ -96,7 +104,7 @@ export default function DashboardOverview() {
 
       if (response.data.success) {
         setUploadedReport(response.data);
-        addToast(`Resume parsed! ATS Score: ${response.data.baselineAts?.overallScore || 82}/100`, 'success');
+        addToast(`Resume parsed! ATS Score: ${response.data.baselineAts?.overallScore || 80}/100`, 'success');
         fetchDashboardData();
       }
     } catch (err) {
@@ -107,23 +115,71 @@ export default function DashboardOverview() {
     }
   };
 
-  // Compute aggregate metrics from real user resumes
+  // Compute authentic metrics strictly from real user profile and evaluated resumes
   const latestResume = resumes[0] || null;
-  const currentAtsScore = latestResume?.atsScore?.overallScore || 83;
-  const completenessScore = latestResume?.summary && latestResume?.experience?.length ? 92 : 78;
-  const keywordScore = latestResume?.skills?.programmingLanguages?.length ? 84 : 72;
-  const roleMatchScore = latestResume?.targetRole ? 88 : 80;
+  const realAtsScore = latestResume?.atsScore?.overallScore ?? null;
 
-  // Chart data from actual resume versions or fallback progression
-  const chartData = resumes.length > 0 ? resumes.map((r, i) => ({
-    name: r.title.length > 15 ? r.title.substring(0, 15) + '...' : r.title,
-    score: r.atsScore?.overallScore || (70 + (i * 4))
-  })).reverse() : [
-    { name: 'Initial', score: 68 },
-    { name: 'Formatted', score: 76 },
-    { name: 'Keywords', score: 83 },
-    { name: 'Optimized', score: 89 }
-  ];
+  // Real completeness calculation (20% each: contact info, summary, education, skills, experience)
+  const computeCompleteness = () => {
+    let score = 0;
+    const p = profile || {};
+    const r = latestResume || {};
+
+    const hasContact = Boolean(p.personalInfo?.fullName || r.contactInfo?.fullName || user?.name);
+    const hasSummary = Boolean(p.summary || r.summary);
+    const hasEdu = Boolean((p.education && p.education.length > 0) || (r.education && r.education.length > 0));
+    const hasSkills = Boolean(
+      (p.skills && Object.values(p.skills).some(arr => Array.isArray(arr) && arr.length > 0)) ||
+      (r.skills && Object.values(r.skills).some(arr => Array.isArray(arr) && arr.length > 0))
+    );
+    const hasExp = Boolean((p.experience && p.experience.length > 0) || (r.experience && r.experience.length > 0));
+
+    if (hasContact) score += 20;
+    if (hasSummary) score += 20;
+    if (hasEdu) score += 20;
+    if (hasSkills) score += 20;
+    if (hasExp) score += 20;
+    return score;
+  };
+
+  const completenessScore = computeCompleteness();
+
+  // Keyword coverage from real verified skills
+  const computeKeywordCoverage = () => {
+    const p = profile?.skills || {};
+    const r = latestResume?.skills || {};
+    const skillSet = new Set([
+      ...(p.programmingLanguages || []),
+      ...(p.frameworks || []),
+      ...(p.databases || []),
+      ...(p.cloud || []),
+      ...(p.tools || []),
+      ...(r.programmingLanguages || []),
+      ...(r.frameworks || []),
+      ...(r.databases || [])
+    ]);
+    const count = skillSet.size;
+    if (count === 0) return null;
+    return Math.min(100, Math.round((count / 12) * 100));
+  };
+
+  const keywordCoverage = computeKeywordCoverage();
+
+  // Role match score: real target role evaluation if set
+  const roleMatchScore = latestResume?.targetRole && latestResume?.atsScore?.breakdown?.roleRelevance
+    ? Math.round((latestResume.atsScore.breakdown.roleRelevance.score / latestResume.atsScore.breakdown.roleRelevance.maxScore) * 100)
+    : null;
+
+  // ATS score history: strictly real evaluated resume data
+  const realChartData = resumes
+    .filter(r => r.atsScore && typeof r.atsScore.overallScore === 'number')
+    .map(r => ({
+      name: r.title && r.title.length > 15 ? r.title.substring(0, 15) + '...' : (r.title || 'Resume'),
+      score: r.atsScore.overallScore
+    }))
+    .reverse();
+
+  const hasRealScoreHistory = realChartData.length >= 2;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -141,16 +197,17 @@ export default function DashboardOverview() {
         <div style={{ maxWidth: '640px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', backgroundColor: '#DBEAFE', borderRadius: '20px', color: '#1D4ED8', fontSize: '12px', fontWeight: '600', marginBottom: '10px' }}>
             <ShieldCheck size={14} />
-            <span>AI-Powered ATS Compatibility Engine Active</span>
+            <span>AI ATS Resume Optimizer</span>
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0F172A', lineHeight: '1.2' }}>
-            Your Resume. Your ATS Score. Your Next Opportunity.
+            Optimize Your Resume for ATS Compatibility
           </h1>
           <p style={{ fontSize: '14px', color: '#475569', marginTop: '6px', lineHeight: '1.5' }}>
-            Analyze machine readability, diagnose missing keywords, and tailor your verified experience for your target job with zero fabrication.
+            Measure machine parseability, identify role-specific keyword gaps, and tailor your verified experience with zero fabrication.
           </p>
         </div>
 
+        {/* 3 Main Actions: [Upload Resume] [Optimize for Role] [Build Resume] */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="file"
@@ -176,6 +233,15 @@ export default function DashboardOverview() {
             <Sparkles size={16} />
             <span>Optimize for Role</span>
           </Link>
+
+          <Link
+            to="/dashboard/builder"
+            className="btn btn-secondary"
+            style={{ padding: '10px 18px', fontSize: '14px', fontWeight: '600' }}
+          >
+            <Edit3 size={16} />
+            <span>Build Resume</span>
+          </Link>
         </div>
       </div>
 
@@ -185,6 +251,7 @@ export default function DashboardOverview() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '16px'
       }}>
+        {/* Current ATS Score */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>Current ATS Score</span>
@@ -193,14 +260,25 @@ export default function DashboardOverview() {
             </div>
           </div>
           <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)' }}>
-            {currentAtsScore} <span style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-muted)' }}>/ 100</span>
+            {realAtsScore !== null ? (
+              <>
+                {realAtsScore} <span style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-muted)' }}>/ 100</span>
+              </>
+            ) : (
+              <span style={{ color: 'var(--text-muted)' }}>-- <span style={{ fontSize: '16px', fontWeight: '500' }}>/ 100</span></span>
+            )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: currentAtsScore >= 80 ? 'var(--success)' : '#D97706', marginTop: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: realAtsScore !== null ? (realAtsScore >= 80 ? 'var(--success)' : '#D97706') : 'var(--text-muted)', marginTop: '6px' }}>
             <TrendingUp size={14} />
-            <span>{currentAtsScore >= 80 ? 'Strong ATS compatibility' : 'Optimization suggested'}</span>
+            <span>
+              {realAtsScore !== null
+                ? (realAtsScore >= 80 ? 'Strong ATS compatibility' : 'Optimization suggested')
+                : 'Upload or evaluate resume to calculate'}
+            </span>
           </div>
         </div>
 
+        {/* Resume Completeness */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>Resume Completeness</span>
@@ -212,10 +290,11 @@ export default function DashboardOverview() {
             {completenessScore}%
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
-            Core sections & contact info detected
+            {completenessScore >= 80 ? 'Core sections & verified details populated' : 'Add education, skills & work experience'}
           </div>
         </div>
 
+        {/* Keyword Coverage */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>Keyword Coverage</span>
@@ -224,13 +303,14 @@ export default function DashboardOverview() {
             </div>
           </div>
           <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)' }}>
-            {keywordScore}%
+            {keywordCoverage !== null ? `${keywordCoverage}%` : '--'}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
-            Technical keywords & action verbs
+            {keywordCoverage !== null ? 'Technical keywords & competencies verified' : 'Add skills in Master Profile to evaluate'}
           </div>
         </div>
 
+        {/* Role Match */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>Role Match</span>
@@ -239,15 +319,15 @@ export default function DashboardOverview() {
             </div>
           </div>
           <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)' }}>
-            {roleMatchScore}%
+            {roleMatchScore !== null ? `${roleMatchScore}%` : '--'}
           </div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
-            Based on target role requirements
+            {latestResume?.targetRole ? `Target: ${latestResume.targetRole}` : 'Set target role in Optimizer to analyze'}
           </div>
         </div>
       </div>
 
-      {/* 3. Drag & Drop Quick Upload Container (First-Time Flow) */}
+      {/* 3. Drag & Drop Quick Upload Container */}
       <div
         className="card"
         onClick={() => fileInputRef.current?.click()}
@@ -280,40 +360,63 @@ export default function DashboardOverview() {
 
       {/* 4. ATS Score History & Top Resume Issues */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
-        {/* ATS Score History Chart */}
+        {/* ATS Score History */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <h3 style={{ fontSize: '16px', fontWeight: '700' }}>ATS Score History</h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Score evolution across revisions</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Score evolution across evaluated revisions</p>
             </div>
-            <span className="badge badge-success">Trending Up</span>
+            {hasRealScoreHistory && <span className="badge badge-success">Evaluated</span>}
           </div>
 
-          <div style={{ width: '100%', height: '220px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="scoreArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke="#94A3B8" fontSize={12} />
-                <YAxis domain={[50, 100]} stroke="#94A3B8" fontSize={12} />
-                <Tooltip />
-                <Area type="monotone" dataKey="score" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#scoreArea)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {hasRealScoreHistory ? (
+            <div style={{ width: '100%', height: '220px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={realChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="scoreArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563EB" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" stroke="#94A3B8" fontSize={12} />
+                  <YAxis domain={[40, 100]} stroke="#94A3B8" fontSize={12} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="score" stroke="#2563EB" strokeWidth={2} fillOpacity={1} fill="url(#scoreArea)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{
+              height: '220px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--bg-subtle)',
+              borderRadius: '8px',
+              border: '1px dashed var(--border-color)',
+              padding: '20px',
+              textAlign: 'center'
+            }}>
+              <Gauge size={32} style={{ color: '#94A3B8', marginBottom: '8px' }} />
+              <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                No Score History Recorded Yet
+              </div>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '320px', marginTop: '4px', lineHeight: '1.4' }}>
+                As you upload, optimize, and evaluate multiple resume versions, your ATS score progression will be tracked here.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Top Resume Issues */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: '700' }}>Top Resume Issues</h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Actionable findings from ATS screening engine</p>
+              <h3 style={{ fontSize: '16px', fontWeight: '700' }}>ATS Optimization Checklist</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Actionable findings from ATS screening criteria</p>
             </div>
             <Link to="/dashboard/ats" style={{ fontSize: '12px', color: '#2563EB', fontWeight: '600' }}>
               Full Report →
@@ -321,36 +424,36 @@ export default function DashboardOverview() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px', backgroundColor: '#FEF2F2', borderRadius: '8px', border: '1px solid #FECACA' }}>
-              <AlertTriangle size={18} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px', backgroundColor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+              <CheckCircle2 size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#991B1B' }}>Missing measurable achievements</div>
-                <div style={{ fontSize: '12px', color: '#B91C1C' }}>Bullet points should include metrics (e.g. latency, scale, %).</div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1E40AF' }}>Master Profile Synchronization</div>
+                <div style={{ fontSize: '12px', color: '#2563EB' }}>Maintain verified work history and education as ground truth for AI optimization.</div>
               </div>
-              <Link to="/dashboard/builder" className="btn btn-secondary btn-sm" style={{ fontSize: '11px', padding: '4px 8px' }}>
-                Fix with AI
+              <Link to="/dashboard/profile" className="btn btn-secondary btn-sm" style={{ fontSize: '11px', padding: '4px 8px' }}>
+                View Profile
               </Link>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px', backgroundColor: '#FFFBEB', borderRadius: '8px', border: '1px solid #FDE68A' }}>
               <AlertTriangle size={18} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400E' }}>Summary could be more targeted</div>
-                <div style={{ fontSize: '12px', color: '#B45309' }}>Professional summary should explicitly highlight primary tech stack.</div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400E' }}>Quantified Impact in Bullet Points</div>
+                <div style={{ fontSize: '12px', color: '#B45309' }}>ATS systems favor bullet points with measurable metrics (%, scale, latency).</div>
               </div>
               <Link to="/dashboard/builder" className="btn btn-secondary btn-sm" style={{ fontSize: '11px', padding: '4px 8px' }}>
-                Fix with AI
+                Edit Resumes
               </Link>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px', backgroundColor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-              <CheckCircle2 size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              <Sparkles size={18} color="#64748B" style={{ marginTop: '2px', flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#1E40AF' }}>Keyword coverage can be improved</div>
-                <div style={{ fontSize: '12px', color: '#2563EB' }}>Target role requirements can be better mapped to verified skills.</div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>Role-Specific Keyword Alignment</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Match verified competencies directly against target job requirements.</div>
               </div>
               <Link to="/dashboard/optimizer" className="btn btn-secondary btn-sm" style={{ fontSize: '11px', padding: '4px 8px' }}>
-                Optimize
+                Optimize Role
               </Link>
             </div>
           </div>
