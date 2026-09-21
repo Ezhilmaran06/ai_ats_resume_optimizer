@@ -1,8 +1,6 @@
-import io
 import re
-from typing import Dict, Any, List
-from pypdf import PdfReader
-import docx
+from typing import Dict, Any, List, Optional
+from app.utils.text_extractor import extract_text, extract_text_from_pdf, extract_text_from_docx, extract_text_from_txt
 
 COMMON_TECH_SKILLS = [
     # Languages
@@ -34,11 +32,15 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 def extract_text_from_txt(file_bytes: bytes) -> str:
     return file_bytes.decode('utf-8', errors='ignore')
 
-def extract_contact_info(text: str) -> Dict[str, str]:
+def extract_contact_info(text: str) -> Dict[str, Any]:
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
     phone_match = re.search(r'(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}', text)
     linkedin_match = re.search(r'(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w\-]+', text, re.I)
     github_match = re.search(r'(?:https?:\/\/)?(?:www\.)?github\.com\/[\w\-]+', text, re.I)
+    portfolio_match = re.search(r'(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.(?:io|me|dev|app|tech|co|com)(?:\/[^\s]*)?', text, re.I)
+
+    # Location pattern (e.g. City, State or City, Country)
+    location_match = re.search(r'([A-Z][a-zA-Z\s]+,\s*[A-Z]{2}(?:\s*\d{5})?|[A-Z][a-zA-Z\s]+,\s*(?:USA|India|Canada|UK|Germany|Remote))\b', text)
     
     # Try finding candidate name from early lines
     lines = [line.strip() for line in text.split('\n') if line.strip()]
@@ -49,14 +51,23 @@ def extract_contact_info(text: str) -> Dict[str, str]:
             full_name = line
             break
 
+    links = []
+    if linkedin_match:
+        links.append({"label": "LinkedIn", "url": linkedin_match.group(0)})
+    if github_match:
+        links.append({"label": "GitHub", "url": github_match.group(0)})
+    if portfolio_match and portfolio_match.group(0) not in [l.get("url") for l in links]:
+        links.append({"label": "Portfolio", "url": portfolio_match.group(0)})
+
     return {
         "fullName": full_name or "Candidate Name",
         "email": email_match.group(0) if email_match else "",
         "phone": phone_match.group(0) if phone_match else "",
-        "location": "",
+        "location": location_match.group(0) if location_match else "",
         "linkedin": linkedin_match.group(0) if linkedin_match else "",
         "github": github_match.group(0) if github_match else "",
-        "portfolio": ""
+        "portfolio": portfolio_match.group(0) if portfolio_match else "",
+        "links": links
     }
 
 def detect_sections(text: str) -> Dict[str, str]:
@@ -275,6 +286,7 @@ def parse_resume_document(file_bytes: bytes, filename: str) -> Dict[str, Any]:
             "title": f"{contact['fullName']} Resume",
             "templateId": "ats-classic",
             "personalInfo": contact,
+            "links": contact.get("links", []),
             "summary": summary,
             "education": education,
             "skills": skills,
