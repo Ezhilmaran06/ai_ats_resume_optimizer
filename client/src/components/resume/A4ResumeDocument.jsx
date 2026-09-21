@@ -85,6 +85,27 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
       );
     }
 
+    if (templateId === 'executive') {
+      return (
+        <header style={{ borderBottom: `2px solid ${accentColor || '#0F172A'}`, paddingBottom: '12px', marginBottom: '14px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '0.04em', textTransform: 'uppercase', color: '#0F172A', marginBottom: '4px' }}>
+            {personalInfo.fullName || 'Candidate Name'}
+          </h1>
+          <div style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '0.06em', textTransform: 'uppercase', color: accentColor, marginBottom: '8px' }}>
+            {personalInfo.professionalTitle || 'Executive Leader'}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '11px', color: '#475569' }}>
+            {contactList.map((item, idx) => (
+              <span key={idx}>
+                {item}
+                {idx < contactList.length - 1 && <span style={{ marginLeft: '12px', color: '#CBD5E1' }}>•</span>}
+              </span>
+            ))}
+          </div>
+        </header>
+      );
+    }
+
     // Default: ATS Classic & SWE
     return (
       <header className={styles.atsClassicHeader} style={{ borderColor: templateId === 'swe' ? accentColor : '#0F172A' }}>
@@ -271,6 +292,46 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
     );
   };
 
+  const renderAchievements = () => {
+    const achs = resume.achievements || [];
+    if (!achs || achs.length === 0) return null;
+    return (
+      <section style={{ marginBottom: '14px' }}>
+        <h2 className={styles.sectionTitle} style={{ color: templateId === 'modern-pro' ? accentColor : '#0F172A' }}>
+          Key Achievements & Honors
+        </h2>
+        <ul className={styles.bulletList}>
+          {achs.map((a, i) => (
+            <li key={i} className={styles.bulletItem} style={{ lineHeight: lineSpacing }}>
+              <strong>{a.title || a.name || a}</strong>{a.description ? `: ${a.description}` : ''}
+              {a.date ? ` (${a.date})` : ''}
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  };
+
+  const renderLanguages = () => {
+    const langs = resume.languages || [];
+    if (!langs || langs.length === 0) return null;
+    return (
+      <section style={{ marginBottom: '14px' }}>
+        <h2 className={styles.sectionTitle} style={{ color: templateId === 'modern-pro' ? accentColor : '#0F172A' }}>
+          Languages
+        </h2>
+        <div style={{ fontSize: '12px', color: '#334155' }}>
+          {langs.map((l, i) => (
+            <span key={i}>
+              <strong>{l.language || l.name || l}</strong>{l.proficiency ? ` (${l.proficiency})` : ''}
+              {i < langs.length - 1 ? '  •  ' : ''}
+            </span>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div
       ref={ref}
@@ -290,6 +351,8 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
           {renderProjects()}
           {renderEducation()}
           {renderCertifications()}
+          {renderAchievements()}
+          {renderLanguages()}
         </>
       ) : templateId === 'fresh-grad' ? (
         <>
@@ -298,6 +361,18 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
           {renderProjects()}
           {renderExperience()}
           {renderCertifications()}
+          {renderAchievements()}
+          {renderLanguages()}
+        </>
+      ) : templateId === 'executive' ? (
+        <>
+          {renderSkills()}
+          {renderExperience()}
+          {renderCertifications()}
+          {renderEducation()}
+          {renderProjects()}
+          {renderAchievements()}
+          {renderLanguages()}
         </>
       ) : (
         <>
@@ -306,6 +381,8 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
           {renderSkills()}
           {renderEducation()}
           {renderCertifications()}
+          {renderAchievements()}
+          {renderLanguages()}
         </>
       )}
     </div>
