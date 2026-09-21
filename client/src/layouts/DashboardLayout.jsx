@@ -38,7 +38,7 @@ export default function DashboardLayout() {
     const path = location.pathname;
     if (path === '/dashboard') return 'Dashboard Overview';
     if (path === '/dashboard/profile') return 'Master Profile (Source of Truth)';
-    if (path === '/dashboard/resumes') return 'Upload & Manage Resumes';
+    if (path === '/dashboard/resumes') return 'My Resumes';
     if (path.startsWith('/dashboard/builder')) return 'AI Resume Editor';
     if (path === '/dashboard/templates') return 'ATS-Friendly Templates';
     if (path.startsWith('/dashboard/optimizer')) return 'Optimize Resume for Role';
@@ -90,7 +90,7 @@ export default function DashboardLayout() {
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
               <FileText size={18} />
-              {!collapsed && <span>Upload & Resumes</span>}
+              {!collapsed && <span>My Resumes</span>}
             </NavLink>
             <NavLink
               to="/dashboard/builder"

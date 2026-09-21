@@ -25,6 +25,17 @@ export default function ResumeManagerPage() {
   const [diffModalData, setDiffModalData] = useState(null);
   const [diffLoading, setDiffLoading] = useState(false);
 
+  // Rename state
+  const [renameModalResume, setRenameModalResume] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renaming, setRenaming] = useState(false);
+
+  // Create state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newResumeTitle, setNewResumeTitle] = useState('');
+  const [newResumeTemplate, setNewResumeTemplate] = useState('ats-classic');
+  const [creating, setCreating] = useState(false);
+
   const navigate = useNavigate();
   const { addToast } = useToast();
 
@@ -46,6 +57,34 @@ export default function ResumeManagerPage() {
     }
   };
 
+  const handleCreateResume = async (e) => {
+    e.preventDefault();
+    if (!newResumeTitle.trim()) {
+      addToast('Please enter a resume title.', 'error');
+      return;
+    }
+    try {
+      setCreating(true);
+      const res = await api.post('/resumes', {
+        title: newResumeTitle.trim(),
+        name: newResumeTitle.trim(),
+        templateId: newResumeTemplate,
+        template: newResumeTemplate,
+        fromMaster: true
+      });
+      if (res.data.success) {
+        addToast('Resume created successfully!', 'success');
+        setShowCreateModal(false);
+        setNewResumeTitle('');
+        navigate(`/dashboard/builder/${res.data.data._id}`);
+      }
+    } catch (err) {
+      addToast('Failed to create resume.', 'error');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const handleDuplicate = async (id) => {
     try {
       const res = await api.post(`/resumes/${id}/duplicate`);
@@ -55,6 +94,31 @@ export default function ResumeManagerPage() {
       }
     } catch (err) {
       addToast('Failed to duplicate resume.', 'error');
+    }
+  };
+
+  const handleRenameSubmit = async (e) => {
+    e.preventDefault();
+    if (!renameValue.trim()) {
+      addToast('Please enter a valid title.', 'error');
+      return;
+    }
+    try {
+      setRenaming(true);
+      const res = await api.put(`/resumes/${renameModalResume._id}/rename`, {
+        name: renameValue.trim(),
+        title: renameValue.trim()
+      });
+      if (res.data.success) {
+        addToast('Resume renamed successfully!', 'success');
+        setRenameModalResume(null);
+        setRenameValue('');
+        fetchResumes();
+      }
+    } catch (err) {
+      addToast('Failed to rename resume.', 'error');
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -90,17 +154,17 @@ export default function ResumeManagerPage() {
       {/* Header */}
       <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700' }}>Resume Version Manager</h2>
+          <h2 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)' }}>My Resumes</h2>
           <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Maintain job-specific tailored resumes without ever modifying or overwriting your Master Profile.
+            Create, edit, duplicate, rename, and manage your ATS-optimized tailored resumes.
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <Link to="/dashboard/builder" className="btn btn-primary">
+          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
             <Plus size={16} />
             Create New Resume
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -193,16 +257,147 @@ export default function ResumeManagerPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    onClick={() => {
+                      setRenameModalResume(r);
+                      setRenameValue(r.title || r.name || '');
+                    }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '4px 8px' }}
+                    title="Rename Resume"
+                  >
+                    <Edit3 size={14} />
+                  </button>
                   <button onClick={() => handleDuplicate(r._id)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} title="Duplicate">
                     <Copy size={14} />
                   </button>
-                  <button onClick={() => handleDelete(r._id, r.title)} className="btn btn-danger btn-sm" style={{ padding: '4px 8px' }} title="Delete">
+                  <button onClick={() => handleDelete(r._id, r.title || r.name)} className="btn btn-danger btn-sm" style={{ padding: '4px 8px' }} title="Delete">
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* CREATE RESUME MODAL */}
+      {showCreateModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px'
+        }}>
+          <div className="card" style={{ maxWidth: '480px', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Create New Resume</h3>
+              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateResume}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                  Resume Name
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="e.g. Senior Frontend Engineer 2026"
+                  value={newResumeTitle}
+                  onChange={(e) => setNewResumeTitle(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                  Choose Template
+                </label>
+                <select
+                  className="input"
+                  value={newResumeTemplate}
+                  onChange={(e) => setNewResumeTemplate(e.target.value)}
+                >
+                  <option value="ats-classic">ATS Classic (High Machine Readability)</option>
+                  <option value="modern-pro">Modern Professional</option>
+                  <option value="swe">Software Engineer</option>
+                  <option value="fresh-grad">Fresh Graduate</option>
+                  <option value="minimal">Minimal Clean</option>
+                  <option value="executive">Executive Leadership</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" disabled={creating} className="btn btn-primary">
+                  {creating ? 'Creating...' : 'Create & Open Editor'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RENAME RESUME MODAL */}
+      {renameModalResume && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px'
+        }}>
+          <div className="card" style={{ maxWidth: '420px', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Rename Resume</h3>
+              <button onClick={() => setRenameModalResume(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleRenameSubmit}>
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                  New Name
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  autoFocus
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => setRenameModalResume(null)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" disabled={renaming} className="btn btn-primary">
+                  {renaming ? 'Saving...' : 'Rename'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

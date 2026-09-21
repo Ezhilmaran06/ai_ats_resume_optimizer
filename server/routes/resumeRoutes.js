@@ -6,6 +6,7 @@ const {
   updateResume,
   deleteResume,
   duplicateResume,
+  renameResume,
   uploadResume,
   recalculateResumeScore,
   exportDocx,
@@ -31,6 +32,7 @@ router.route('/:id')
   .delete(deleteResume);
 
 router.post('/:id/duplicate', duplicateResume);
+router.put('/:id/rename', renameResume);
 router.post('/:id/recalculate', recalculateResumeScore);
 router.get('/:id/export/docx', exportDocx);
 router.get('/:id/export/txt', exportTxt);

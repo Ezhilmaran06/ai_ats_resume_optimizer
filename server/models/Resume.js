@@ -6,9 +6,17 @@ const ResumeSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  name: {
+    type: String,
+    trim: true,
+    default: 'Untitled Resume'
+  },
   title: {
     type: String,
-    required: true,
     trim: true,
     default: 'Untitled Resume'
   },
@@ -16,10 +24,20 @@ const ResumeSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  template: {
+    type: String,
+    enum: ['ats-classic', 'modern-pro', 'swe', 'fresh-grad', 'minimal', 'executive'],
+    default: 'ats-classic'
+  },
   templateId: {
     type: String,
     enum: ['ats-classic', 'modern-pro', 'swe', 'fresh-grad', 'minimal', 'executive'],
     default: 'ats-classic'
+  },
+  source: {
+    type: String,
+    enum: ['scratch', 'master', 'upload', 'template', 'duplicate'],
+    default: 'scratch'
   },
   targetRole: {
     type: String,
@@ -33,6 +51,17 @@ const ResumeSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Job',
     default: null
+  },
+  sections: {
+    summary: { type: String, default: '' },
+    skills: { type: mongoose.Schema.Types.Mixed, default: {} },
+    experience: { type: Array, default: [] },
+    projects: { type: Array, default: [] },
+    education: { type: Array, default: [] },
+    certifications: { type: Array, default: [] },
+    achievements: { type: Array, default: [] },
+    languages: { type: Array, default: [] },
+    personalInfo: { type: mongoose.Schema.Types.Mixed, default: {} }
   },
   personalInfo: {
     fullName: { type: String, default: '' },
@@ -131,5 +160,28 @@ const ResumeSchema = new mongoose.Schema({
     default: 1
   }
 }, { timestamps: true });
+
+ResumeSchema.pre('save', function(next) {
+  if (this.name && !this.title) this.title = this.name;
+  if (this.title && !this.name) this.name = this.title;
+  if (this.user && !this.userId) this.userId = this.user;
+  if (this.userId && !this.user) this.user = this.userId;
+  if (this.template && !this.templateId) this.templateId = this.template;
+  if (this.templateId && !this.template) this.template = this.templateId;
+
+  // Sync sections object
+  this.sections = {
+    summary: this.summary || '',
+    skills: this.skills || {},
+    experience: this.experience || [],
+    projects: this.projects || [],
+    education: this.education || [],
+    certifications: this.certifications || [],
+    achievements: this.achievements || [],
+    languages: this.languages || [],
+    personalInfo: this.personalInfo || {}
+  };
+  next();
+});
 
 module.exports = mongoose.model('Resume', ResumeSchema);

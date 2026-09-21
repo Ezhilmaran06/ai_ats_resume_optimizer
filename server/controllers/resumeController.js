@@ -197,6 +197,40 @@ exports.duplicateResume = async (req, res, next) => {
   }
 };
 
+// @desc    Rename resume
+// @route   PUT /api/resumes/:id/rename
+// @access  Private
+exports.renameResume = async (req, res, next) => {
+  try {
+    const { name, title } = req.body;
+    const newName = (name || title || '').trim();
+    if (!newName) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid resume name.' });
+    }
+
+    const resume = await Resume.findOne({ _id: req.params.id, user: req.user.id });
+    if (!resume) {
+      return res.status(404).json({ success: false, message: 'Resume not found.' });
+    }
+
+    resume.name = newName;
+    resume.title = newName;
+    await resume.save();
+
+    await Activity.create({
+      user: req.user.id,
+      action: 'Renamed Resume',
+      type: 'resume',
+      details: `Renamed resume to "${resume.name}".`,
+      targetId: resume._id
+    });
+
+    res.status(200).json({ success: true, data: resume });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // @desc    Upload & Parse resume document (PDF, DOCX, TXT) with immediate ATS scoring
 // @route   POST /api/resumes/upload
 // @access  Private
