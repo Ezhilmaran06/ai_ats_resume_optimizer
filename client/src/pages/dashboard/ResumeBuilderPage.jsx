@@ -25,7 +25,12 @@ import {
   Edit2,
   Gauge,
   Zap,
-  Info
+  Info,
+  ArrowUp,
+  ArrowDown,
+  Palette,
+  Type,
+  Sliders
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -242,6 +247,124 @@ export default function ResumeBuilderPage() {
     window.print();
   };
 
+  const defaultSections = ['summary', 'skills', 'experience', 'projects', 'education', 'certifications', 'achievements'];
+
+  const getActiveSectionOrder = () => {
+    if (resume?.sectionOrder && resume.sectionOrder.length > 0) {
+      return resume.sectionOrder;
+    }
+    return defaultSections;
+  };
+
+  const moveSection = (secKey, dir, e) => {
+    if (e) e.stopPropagation();
+    const currentOrder = [...getActiveSectionOrder()];
+    const idx = currentOrder.indexOf(secKey);
+    if (idx === -1) return;
+    const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentOrder.length) return;
+    const temp = currentOrder[idx];
+    currentOrder[idx] = currentOrder[targetIdx];
+    currentOrder[targetIdx] = temp;
+    setResume(prev => ({ ...prev, sectionOrder: currentOrder }));
+  };
+
+  const addExperience = () => {
+    const newExp = {
+      company: 'New Company',
+      role: 'Position Title',
+      location: '',
+      startDate: '',
+      endDate: 'Present',
+      currentlyWorking: true,
+      description: '',
+      achievements: ['Spearheaded key initiatives resulting in measurable improvements']
+    };
+    setResume(prev => ({ ...prev, experience: [newExp, ...(prev.experience || [])] }));
+    setOpenSection('experience');
+  };
+
+  const deleteExperience = (idx) => {
+    setResume(prev => ({
+      ...prev,
+      experience: prev.experience.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const addProject = () => {
+    const newProj = {
+      name: 'New Project',
+      description: 'Project description highlighting architectural impact and deliverables',
+      technologies: ['React', 'Node.js'],
+      githubUrl: '',
+      projectUrl: ''
+    };
+    setResume(prev => ({ ...prev, projects: [newProj, ...(prev.projects || [])] }));
+    setOpenSection('projects');
+  };
+
+  const deleteProject = (idx) => {
+    setResume(prev => ({
+      ...prev,
+      projects: prev.projects.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const addEducation = () => {
+    const newEdu = {
+      institution: 'University / College',
+      degree: 'B.S.',
+      field: 'Computer Science',
+      startDate: '',
+      endDate: '',
+      cgpa: ''
+    };
+    setResume(prev => ({ ...prev, education: [newEdu, ...(prev.education || [])] }));
+    setOpenSection('education');
+  };
+
+  const deleteEducation = (idx) => {
+    setResume(prev => ({
+      ...prev,
+      education: prev.education.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const addCertification = () => {
+    const newCert = {
+      name: 'Certification Title',
+      issuer: 'Issuing Organization',
+      date: '2025',
+      credentialUrl: ''
+    };
+    setResume(prev => ({ ...prev, certifications: [newCert, ...(prev.certifications || [])] }));
+    setOpenSection('certifications');
+  };
+
+  const deleteCertification = (idx) => {
+    setResume(prev => ({
+      ...prev,
+      certifications: (prev.certifications || []).filter((_, i) => i !== idx)
+    }));
+  };
+
+  const addAchievement = () => {
+    const newAch = {
+      title: 'Achievement Title',
+      description: 'Detailing quantifiable milestone or award recognition',
+      date: '2025'
+    };
+    setResume(prev => ({ ...prev, achievements: [newAch, ...(prev.achievements || [])] }));
+    setOpenSection('achievements');
+  };
+
+  const deleteAchievement = (idx) => {
+    setResume(prev => ({
+      ...prev,
+      achievements: (prev.achievements || []).filter((_, i) => i !== idx)
+    }));
+  };
+
   const toggleSection = (sec) => {
     setOpenSection(openSection === sec ? '' : sec);
   };
@@ -411,85 +534,683 @@ export default function ResumeBuilderPage() {
               )}
             </div>
 
-            {/* Section 2: Summary */}
-            <div className={styles.sectionAccordion}>
-              <div className={styles.accordionHeader} onClick={() => toggleSection('summary')}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>Professional Summary</span>
-                </div>
-                {openSection === 'summary' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-              {openSection === 'summary' && (
-                <div className={styles.accordionBody}>
-                  <textarea
-                    className="form-textarea"
-                    style={{ minHeight: '110px', fontSize: '12.5px' }}
-                    value={resume.summary || ''}
-                    onChange={(e) => setResume({ ...resume, summary: e.target.value })}
-                    placeholder="Write a concise 3-4 sentence professional summary..."
-                  />
-                </div>
-              )}
-            </div>
+            {/* Dynamically Rendered Sections in Order with Up/Down Controls */}
+            {getActiveSectionOrder().map((secKey, sIdx) => {
+              const order = getActiveSectionOrder();
+              const isFirst = sIdx === 0;
+              const isLast = sIdx === order.length - 1;
 
-            {/* Section 3: Experience */}
-            <div className={styles.sectionAccordion}>
-              <div className={styles.accordionHeader} onClick={() => toggleSection('experience')}>
-                <span>Experience ({resume.experience?.length || 0})</span>
-                {openSection === 'experience' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-              {openSection === 'experience' && (
-                <div className={styles.accordionBody}>
-                  {(resume.experience || []).map((exp, idx) => (
-                    <div key={idx} style={{ padding: '10px', border: '1px solid #E2E8F0', borderRadius: '6px' }}>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>{exp.role || 'Position'} at {exp.company || 'Company'}</div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{exp.startDate} – {exp.endDate || 'Present'}</div>
-                      <div style={{ marginTop: '6px', fontSize: '12px' }}>
-                        {exp.achievements?.map((ach, aIdx) => (
-                          <div key={aIdx} style={{ margin: '2px 0' }}>• {ach}</div>
-                        ))}
+              if (secKey === 'summary') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('summary')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>Professional Summary</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('summary', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('summary', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'summary' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    {openSection === 'summary' && (
+                      <div className={styles.accordionBody}>
+                        <textarea
+                          className="form-textarea"
+                          style={{ minHeight: '110px', fontSize: '12.5px' }}
+                          value={resume.summary || ''}
+                          onChange={(e) => setResume({ ...resume, summary: e.target.value })}
+                          placeholder="Write a concise 3-4 sentence professional summary..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
-            {/* Section 4: Projects */}
-            <div className={styles.sectionAccordion}>
-              <div className={styles.accordionHeader} onClick={() => toggleSection('projects')}>
-                <span>Projects ({resume.projects?.length || 0})</span>
-                {openSection === 'projects' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-              {openSection === 'projects' && (
-                <div className={styles.accordionBody}>
-                  {(resume.projects || []).map((proj, idx) => (
-                    <div key={idx} style={{ padding: '10px', border: '1px solid #E2E8F0', borderRadius: '6px' }}>
-                      <div style={{ fontWeight: '600', fontSize: '13px' }}>{proj.name || 'Project Name'}</div>
-                      <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{proj.description}</div>
+              if (secKey === 'skills') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('skills')}>
+                      <span>Skills</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('skills', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('skills', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'skills' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    {openSection === 'skills' && (
+                      <div className={styles.accordionBody}>
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '11.5px' }}>Programming Languages (comma separated)</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={(resume.skills?.programmingLanguages || []).join(', ')}
+                            onChange={(e) => setResume({
+                              ...resume,
+                              skills: {
+                                ...(resume.skills || {}),
+                                programmingLanguages: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                              }
+                            })}
+                            placeholder="e.g. JavaScript, Python, TypeScript, Go"
+                          />
+                        </div>
 
-            {/* Section 5: Education */}
-            <div className={styles.sectionAccordion}>
-              <div className={styles.accordionHeader} onClick={() => toggleSection('education')}>
-                <span>Education ({resume.education?.length || 0})</span>
-                {openSection === 'education' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-              {openSection === 'education' && (
-                <div className={styles.accordionBody}>
-                  {(resume.education || []).map((edu, idx) => (
-                    <div key={idx} style={{ padding: '8px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '12px' }}>
-                      <div style={{ fontWeight: '600' }}>{edu.degree}</div>
-                      <div style={{ color: 'var(--text-muted)' }}>{edu.institution}</div>
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '11.5px' }}>Frameworks & Libraries</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={(resume.skills?.frameworks || []).join(', ')}
+                            onChange={(e) => setResume({
+                              ...resume,
+                              skills: {
+                                ...(resume.skills || {}),
+                                frameworks: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                              }
+                            })}
+                            placeholder="e.g. React, Node.js, Express, FastAPI, Next.js"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '11.5px' }}>Databases & Cloud</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={(resume.skills?.databases || []).join(', ')}
+                            onChange={(e) => setResume({
+                              ...resume,
+                              skills: {
+                                ...(resume.skills || {}),
+                                databases: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                              }
+                            })}
+                            placeholder="e.g. PostgreSQL, MongoDB, Redis, AWS, Docker"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label" style={{ fontSize: '11.5px' }}>Developer Tools</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={(resume.skills?.tools || []).join(', ')}
+                            onChange={(e) => setResume({
+                              ...resume,
+                              skills: {
+                                ...(resume.skills || {}),
+                                tools: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                              }
+                            })}
+                            placeholder="e.g. Git, GitHub Actions, Linux, Jest, Webpack"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (secKey === 'experience') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('experience')}>
+                      <span>Experience ({resume.experience?.length || 0})</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('experience', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('experience', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'experience' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    {openSection === 'experience' && (
+                      <div className={styles.accordionBody}>
+                        <button
+                          type="button"
+                          onClick={addExperience}
+                          className="btn btn-secondary btn-sm"
+                          style={{ width: '100%', marginBottom: '10px' }}
+                        >
+                          <Plus size={14} /> Add Experience
+                        </button>
+                        {(resume.experience || []).map((exp, idx) => (
+                          <div key={idx} style={{ padding: '10px', border: '1px solid #E2E8F0', borderRadius: '6px', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              <span style={{ fontWeight: '700', fontSize: '12px' }}>Role #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => deleteExperience(idx)}
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '2px 6px' }}
+                                title="Delete experience"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '6px' }}>
+                              <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Position Title"
+                                value={exp.role || ''}
+                                onChange={(e) => {
+                                  const updated = [...resume.experience];
+                                  updated[idx].role = e.target.value;
+                                  setResume({ ...resume, experience: updated });
+                                }}
+                              />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '6px' }}>
+                              <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Company Name"
+                                value={exp.company || ''}
+                                onChange={(e) => {
+                                  const updated = [...resume.experience];
+                                  updated[idx].company = e.target.value;
+                                  setResume({ ...resume, experience: updated });
+                                }}
+                              />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
+                              <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Start Date"
+                                value={exp.startDate || ''}
+                                onChange={(e) => {
+                                  const updated = [...resume.experience];
+                                  updated[idx].startDate = e.target.value;
+                                  setResume({ ...resume, experience: updated });
+                                }}
+                              />
+                              <input
+                                type="text"
+                                className="form-input"
+                                placeholder="End Date / Present"
+                                value={exp.endDate || ''}
+                                onChange={(e) => {
+                                  const updated = [...resume.experience];
+                                  updated[idx].endDate = e.target.value;
+                                  setResume({ ...resume, experience: updated });
+                                }}
+                              />
+                            </div>
+                            <div className="form-group" style={{ marginBottom: '6px' }}>
+                              <textarea
+                                className="form-textarea"
+                                style={{ minHeight: '60px', fontSize: '11.5px' }}
+                                placeholder="Key achievements or bullets (one per line)"
+                                value={(exp.achievements || []).join('\n')}
+                                onChange={(e) => {
+                                  const updated = [...resume.experience];
+                                  updated[idx].achievements = e.target.value.split('\n').filter(Boolean);
+                                  setResume({ ...resume, experience: updated });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (secKey === 'projects') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('projects')}>
+                      <span>Projects ({resume.projects?.length || 0})</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('projects', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('projects', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'projects' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </div>
+                    </div>
+                    {openSection === 'projects' && (
+                      <div className={styles.accordionBody}>
+                        <button
+                          type="button"
+                          onClick={addProject}
+                          className="btn btn-secondary btn-sm"
+                          style={{ width: '100%', marginBottom: '10px' }}
+                        >
+                          <Plus size={14} /> Add Project
+                        </button>
+                        {(resume.projects || []).map((proj, idx) => (
+                          <div key={idx} style={{ padding: '10px', border: '1px solid #E2E8F0', borderRadius: '6px', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                              <span style={{ fontWeight: '700', fontSize: '12px' }}>Project #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => deleteProject(idx)}
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '2px 6px' }}
+                                title="Delete project"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Project Name"
+                              style={{ marginBottom: '6px' }}
+                              value={proj.name || ''}
+                              onChange={(e) => {
+                                const updated = [...resume.projects];
+                                updated[idx].name = e.target.value;
+                                setResume({ ...resume, projects: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Technologies (comma separated)"
+                              style={{ marginBottom: '6px' }}
+                              value={(proj.technologies || []).join(', ')}
+                              onChange={(e) => {
+                                const updated = [...resume.projects];
+                                updated[idx].technologies = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                setResume({ ...resume, projects: updated });
+                              }}
+                            />
+                            <textarea
+                              className="form-textarea"
+                              style={{ minHeight: '50px', fontSize: '11.5px' }}
+                              placeholder="Project description or outcomes"
+                              value={proj.description || ''}
+                              onChange={(e) => {
+                                const updated = [...resume.projects];
+                                updated[idx].description = e.target.value;
+                                setResume({ ...resume, projects: updated });
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (secKey === 'education') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('education')}>
+                      <span>Education ({resume.education?.length || 0})</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('education', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('education', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'education' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </div>
+                    </div>
+                    {openSection === 'education' && (
+                      <div className={styles.accordionBody}>
+                        <button
+                          type="button"
+                          onClick={addEducation}
+                          className="btn btn-secondary btn-sm"
+                          style={{ width: '100%', marginBottom: '10px' }}
+                        >
+                          <Plus size={14} /> Add Education
+                        </button>
+                        {(resume.education || []).map((edu, idx) => (
+                          <div key={idx} style={{ padding: '8px', border: '1px solid #E2E8F0', borderRadius: '6px', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ fontWeight: '700', fontSize: '12px' }}>Education #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => deleteEducation(idx)}
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '2px 6px' }}
+                                title="Delete education"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Degree (e.g. B.S., M.S.)"
+                              style={{ marginBottom: '4px' }}
+                              value={edu.degree || ''}
+                              onChange={(e) => {
+                                const updated = [...resume.education];
+                                updated[idx].degree = e.target.value;
+                                setResume({ ...resume, education: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Field of Study (e.g. Computer Science)"
+                              style={{ marginBottom: '4px' }}
+                              value={edu.field || ''}
+                              onChange={(e) => {
+                                const updated = [...resume.education];
+                                updated[idx].field = e.target.value;
+                                setResume({ ...resume, education: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Institution / University"
+                              style={{ marginBottom: '4px' }}
+                              value={edu.institution || ''}
+                              onChange={(e) => {
+                                const updated = [...resume.education];
+                                updated[idx].institution = e.target.value;
+                                setResume({ ...resume, education: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Graduation Year / Date"
+                              value={edu.endDate || ''}
+                              onChange={(e) => {
+                                const updated = [...resume.education];
+                                updated[idx].endDate = e.target.value;
+                                setResume({ ...resume, education: updated });
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (secKey === 'certifications') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('certifications')}>
+                      <span>Certifications ({resume.certifications?.length || 0})</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('certifications', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('certifications', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'certifications' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </div>
+                    </div>
+                    {openSection === 'certifications' && (
+                      <div className={styles.accordionBody}>
+                        <button
+                          type="button"
+                          onClick={addCertification}
+                          className="btn btn-secondary btn-sm"
+                          style={{ width: '100%', marginBottom: '10px' }}
+                        >
+                          <Plus size={14} /> Add Certification
+                        </button>
+                        {(resume.certifications || []).map((cert, idx) => (
+                          <div key={idx} style={{ padding: '8px', border: '1px solid #E2E8F0', borderRadius: '6px', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ fontWeight: '700', fontSize: '12px' }}>Cert #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => deleteCertification(idx)}
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '2px 6px' }}
+                                title="Delete certification"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Certification Name"
+                              style={{ marginBottom: '4px' }}
+                              value={cert.name || ''}
+                              onChange={(e) => {
+                                const updated = [...(resume.certifications || [])];
+                                updated[idx].name = e.target.value;
+                                setResume({ ...resume, certifications: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Issuer (e.g. AWS, Microsoft, Coursera)"
+                              style={{ marginBottom: '4px' }}
+                              value={cert.issuer || ''}
+                              onChange={(e) => {
+                                const updated = [...(resume.certifications || [])];
+                                updated[idx].issuer = e.target.value;
+                                setResume({ ...resume, certifications: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Date (e.g. 2025)"
+                              value={cert.date || ''}
+                              onChange={(e) => {
+                                const updated = [...(resume.certifications || [])];
+                                updated[idx].date = e.target.value;
+                                setResume({ ...resume, certifications: updated });
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (secKey === 'achievements') {
+                return (
+                  <div key={secKey} className={styles.sectionAccordion}>
+                    <div className={styles.accordionHeader} onClick={() => toggleSection('achievements')}>
+                      <span>Achievements ({resume.achievements?.length || 0})</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={(e) => moveSection('achievements', 'up', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isFirst ? 0.3 : 1 }}
+                          title="Move section up"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={(e) => moveSection('achievements', 'down', e)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '2px 5px', opacity: isLast ? 0.3 : 1 }}
+                          title="Move section down"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        {openSection === 'achievements' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </div>
+                    </div>
+                    {openSection === 'achievements' && (
+                      <div className={styles.accordionBody}>
+                        <button
+                          type="button"
+                          onClick={addAchievement}
+                          className="btn btn-secondary btn-sm"
+                          style={{ width: '100%', marginBottom: '10px' }}
+                        >
+                          <Plus size={14} /> Add Achievement
+                        </button>
+                        {(resume.achievements || []).map((ach, idx) => (
+                          <div key={idx} style={{ padding: '8px', border: '1px solid #E2E8F0', borderRadius: '6px', marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ fontWeight: '700', fontSize: '12px' }}>Achievement #{idx + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => deleteAchievement(idx)}
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '2px 6px' }}
+                                title="Delete achievement"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Title (e.g. Hackathon Winner, Top Performer)"
+                              style={{ marginBottom: '4px' }}
+                              value={ach.title || ''}
+                              onChange={(e) => {
+                                const updated = [...(resume.achievements || [])];
+                                updated[idx].title = e.target.value;
+                                setResume({ ...resume, achievements: updated });
+                              }}
+                            />
+                            <textarea
+                              className="form-textarea"
+                              style={{ minHeight: '40px', fontSize: '11.5px', marginBottom: '4px' }}
+                              placeholder="Details / Description"
+                              value={ach.description || ''}
+                              onChange={(e) => {
+                                const updated = [...(resume.achievements || [])];
+                                updated[idx].description = e.target.value;
+                                setResume({ ...resume, achievements: updated });
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder="Date (e.g. 2024)"
+                              value={ach.date || ''}
+                              onChange={(e) => {
+                                const updated = [...(resume.achievements || [])];
+                                updated[idx].date = e.target.value;
+                                setResume({ ...resume, achievements: updated });
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return null;
+            })}
           </div>
         </div>
 
@@ -536,6 +1257,22 @@ export default function ResumeBuilderPage() {
           {/* Header with tabs */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-subtle)' }}>
             <button
+              onClick={() => setActiveTab('formatting')}
+              style={{
+                flex: 1,
+                padding: '12px 8px',
+                border: 'none',
+                background: activeTab === 'formatting' ? '#FFFFFF' : 'transparent',
+                borderBottom: activeTab === 'formatting' ? '2px solid #2563EB' : 'none',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: activeTab === 'formatting' ? '#2563EB' : '#64748B',
+                cursor: 'pointer'
+              }}
+            >
+              Formatting
+            </button>
+            <button
               onClick={() => setActiveTab('suggestions')}
               style={{
                 flex: 1,
@@ -543,7 +1280,7 @@ export default function ResumeBuilderPage() {
                 border: 'none',
                 background: activeTab === 'suggestions' ? '#FFFFFF' : 'transparent',
                 borderBottom: activeTab === 'suggestions' ? '2px solid #2563EB' : 'none',
-                fontSize: '12.5px',
+                fontSize: '12px',
                 fontWeight: '700',
                 color: activeTab === 'suggestions' ? '#2563EB' : '#64748B',
                 cursor: 'pointer'
@@ -559,7 +1296,7 @@ export default function ResumeBuilderPage() {
                 border: 'none',
                 background: activeTab === 'keywords' ? '#FFFFFF' : 'transparent',
                 borderBottom: activeTab === 'keywords' ? '2px solid #2563EB' : 'none',
-                fontSize: '12.5px',
+                fontSize: '12px',
                 fontWeight: '700',
                 color: activeTab === 'keywords' ? '#2563EB' : '#64748B',
                 cursor: 'pointer'
@@ -602,6 +1339,119 @@ export default function ResumeBuilderPage() {
                 <span style={{ fontWeight: '700', color: '#16A34A' }}>+{currentScore - beforeScore} pts</span>
               </div>
             </div>
+
+            {/* TAB CONTENT: FORMATTING */}
+            {activeTab === 'formatting' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Palette size={16} color="var(--primary)" /> Document Typography & Layout
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Font Family</label>
+                  <select
+                    className="form-select"
+                    value={resume.formatting?.fontFamily || 'Inter'}
+                    onChange={(e) => setResume({
+                      ...resume,
+                      formatting: { ...(resume.formatting || {}), fontFamily: e.target.value }
+                    })}
+                  >
+                    <option value="Inter">Inter (Clean Modern Sans)</option>
+                    <option value="Roboto">Roboto (Technical Sans)</option>
+                    <option value="Calibri">Calibri (Corporate Standard)</option>
+                    <option value="Times New Roman">Times New Roman (Academic)</option>
+                    <option value="Garamond">Garamond (Executive Serif)</option>
+                    <option value="Georgia">Georgia (Editorial Serif)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Font Size</label>
+                  <select
+                    className="form-select"
+                    value={resume.formatting?.fontSize || '10pt'}
+                    onChange={(e) => setResume({
+                      ...resume,
+                      formatting: { ...(resume.formatting || {}), fontSize: e.target.value }
+                    })}
+                  >
+                    <option value="9pt">9pt — Compact / Dense</option>
+                    <option value="9.5pt">9.5pt</option>
+                    <option value="10pt">10pt — Standard ATS Safe</option>
+                    <option value="10.5pt">10.5pt</option>
+                    <option value="11pt">11pt — Large / Scannable</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Line Spacing</label>
+                  <select
+                    className="form-select"
+                    value={resume.formatting?.lineSpacing || '1.2'}
+                    onChange={(e) => setResume({
+                      ...resume,
+                      formatting: { ...(resume.formatting || {}), lineSpacing: e.target.value }
+                    })}
+                  >
+                    <option value="1.1">1.1 — Dense</option>
+                    <option value="1.2">1.2 — Standard ATS</option>
+                    <option value="1.3">1.3 — Relaxed</option>
+                    <option value="1.4">1.4 — Spacious</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Margins</label>
+                  <select
+                    className="form-select"
+                    value={resume.formatting?.margins || 'normal'}
+                    onChange={(e) => setResume({
+                      ...resume,
+                      formatting: { ...(resume.formatting || {}), margins: e.target.value }
+                    })}
+                  >
+                    <option value="compact">Compact (0.5 in) — More Content</option>
+                    <option value="normal">Normal (0.75 in) — Recommended</option>
+                    <option value="spacious">Spacious (1.0 in) — Executive</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '12px' }}>Accent Color</label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
+                    {['#2563EB', '#0F172A', '#059669', '#7C3AED', '#DC2626', '#0284C7'].map((col) => (
+                      <button
+                        key={col}
+                        type="button"
+                        onClick={() => setResume({
+                          ...resume,
+                          formatting: { ...(resume.formatting || {}), accentColor: col }
+                        })}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          backgroundColor: col,
+                          border: (resume.formatting?.accentColor || '#2563EB') === col ? '3px solid #000' : '1px solid #CBD5E1',
+                          cursor: 'pointer'
+                        }}
+                      />
+                    ))}
+                    <input
+                      type="color"
+                      value={resume.formatting?.accentColor || '#2563EB'}
+                      onChange={(e) => setResume({
+                        ...resume,
+                        formatting: { ...(resume.formatting || {}), accentColor: e.target.value }
+                      })}
+                      style={{ width: '30px', height: '30px', padding: 0, border: 'none', cursor: 'pointer', background: 'transparent' }}
+                      title="Custom color"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* TAB CONTENT: SUGGESTIONS */}
             {activeTab === 'suggestions' && (

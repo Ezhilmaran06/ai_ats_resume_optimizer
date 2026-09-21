@@ -332,6 +332,28 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
     );
   };
 
+  const sectionMap = {
+    summary: renderSummary,
+    skills: renderSkills,
+    experience: renderExperience,
+    projects: renderProjects,
+    education: renderEducation,
+    certifications: renderCertifications,
+    achievements: renderAchievements,
+    languages: renderLanguages
+  };
+
+  const defaultOrderForTemplate = () => {
+    if (templateId === 'swe') return ['skills', 'experience', 'projects', 'education', 'certifications', 'achievements', 'languages'];
+    if (templateId === 'fresh-grad') return ['education', 'skills', 'projects', 'experience', 'certifications', 'achievements', 'languages'];
+    if (templateId === 'executive') return ['skills', 'experience', 'certifications', 'education', 'projects', 'achievements', 'languages'];
+    return ['experience', 'projects', 'skills', 'education', 'certifications', 'achievements', 'languages'];
+  };
+
+  const activeOrder = (resume.sectionOrder && resume.sectionOrder.length > 0)
+    ? resume.sectionOrder
+    : defaultOrderForTemplate();
+
   return (
     <div
       ref={ref}
@@ -343,48 +365,13 @@ const A4ResumeDocument = forwardRef(({ resume, scale = 1 }, ref) => {
       }}
     >
       {renderHeader()}
-      {renderSummary()}
-      {templateId === 'swe' ? (
-        <>
-          {renderSkills()}
-          {renderExperience()}
-          {renderProjects()}
-          {renderEducation()}
-          {renderCertifications()}
-          {renderAchievements()}
-          {renderLanguages()}
-        </>
-      ) : templateId === 'fresh-grad' ? (
-        <>
-          {renderEducation()}
-          {renderSkills()}
-          {renderProjects()}
-          {renderExperience()}
-          {renderCertifications()}
-          {renderAchievements()}
-          {renderLanguages()}
-        </>
-      ) : templateId === 'executive' ? (
-        <>
-          {renderSkills()}
-          {renderExperience()}
-          {renderCertifications()}
-          {renderEducation()}
-          {renderProjects()}
-          {renderAchievements()}
-          {renderLanguages()}
-        </>
-      ) : (
-        <>
-          {renderExperience()}
-          {renderProjects()}
-          {renderSkills()}
-          {renderEducation()}
-          {renderCertifications()}
-          {renderAchievements()}
-          {renderLanguages()}
-        </>
-      )}
+      {/* If summary is in activeOrder, it will be rendered in order, otherwise render summary first if present */}
+      {!activeOrder.includes('summary') && renderSummary()}
+      {activeOrder.map((secKey) => (
+        <React.Fragment key={secKey}>
+          {sectionMap[secKey] ? sectionMap[secKey]() : null}
+        </React.Fragment>
+      ))}
     </div>
   );
 });
