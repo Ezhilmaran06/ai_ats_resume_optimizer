@@ -484,7 +484,13 @@ export default function ResumeManagerPage() {
       <ResumeUploadModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
-        onSuccess={() => fetchResumes()}
+        onSuccess={(uploadData) => {
+          fetchResumes();
+          const resumeId = uploadData?.resume?._id || uploadData?.data?.resume?._id || uploadData?.data?._id;
+          if (resumeId) {
+            navigate(`/dashboard/ats?resumeId=${resumeId}`);
+          }
+        }}
       />
     </div>
   );

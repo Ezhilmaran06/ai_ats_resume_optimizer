@@ -605,13 +605,21 @@ export default function DashboardOverview() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <button onClick={() => setUploadModalOpen(false)} className="btn btn-secondary">
                     Close
                   </button>
                   <Link
+                    to={`/dashboard/ats?resumeId=${uploadedReport.resume?._id}`}
+                    className="btn btn-secondary"
+                    onClick={() => setUploadModalOpen(false)}
+                  >
+                    <span>View ATS Diagnostic</span>
+                  </Link>
+                  <Link
                     to={`/dashboard/builder/${uploadedReport.resume?._id}`}
                     className="btn btn-primary"
+                    onClick={() => setUploadModalOpen(false)}
                   >
                     <span>Open in AI Resume Editor</span>
                     <ArrowRight size={16} />

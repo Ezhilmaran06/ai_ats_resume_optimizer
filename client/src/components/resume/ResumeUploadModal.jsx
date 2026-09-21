@@ -121,11 +121,13 @@ export default function ResumeUploadModal({ isOpen, onClose, onSuccess }) {
 
       addToast('Resume uploaded and extracted successfully!', 'success');
 
+      const resData = response.data;
+      const resumeId = resData?.resume?._id || resData?.data?.resume?._id || resData?.data?._id;
+
       if (onSuccess) {
         onSuccess(response.data);
-      } else if (response.data.data?.resume?._id || response.data.data?._id) {
-        const resumeId = response.data.data?.resume?._id || response.data.data?._id;
-        navigate(`/dashboard/builder/${resumeId}`);
+      } else if (resumeId) {
+        navigate(`/dashboard/ats?resumeId=${resumeId}`);
       }
 
       onClose();
