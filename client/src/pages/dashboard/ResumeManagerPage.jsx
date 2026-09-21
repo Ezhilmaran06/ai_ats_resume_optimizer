@@ -14,10 +14,12 @@ import {
   X,
   ShieldCheck,
   Building,
-  Briefcase
+  Briefcase,
+  UploadCloud
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import ResumeUploadModal from '../../components/resume/ResumeUploadModal';
 
 export default function ResumeManagerPage() {
   const [resumes, setResumes] = useState([]);
@@ -32,6 +34,7 @@ export default function ResumeManagerPage() {
 
   // Create state
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [newResumeTitle, setNewResumeTitle] = useState('');
   const [newResumeTemplate, setNewResumeTemplate] = useState('ats-classic');
   const [creating, setCreating] = useState(false);
@@ -161,6 +164,10 @@ export default function ResumeManagerPage() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setShowUploadModal(true)} className="btn btn-secondary">
+            <UploadCloud size={16} />
+            Upload Resume
+          </button>
           <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
             <Plus size={16} />
             Create New Resume
@@ -472,6 +479,13 @@ export default function ResumeManagerPage() {
           </div>
         </div>
       )}
+
+      {/* RESUME UPLOAD MODAL */}
+      <ResumeUploadModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSuccess={() => fetchResumes()}
+      />
     </div>
   );
 }

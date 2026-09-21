@@ -240,6 +240,16 @@ exports.uploadResume = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Please upload a PDF, DOCX, or TXT file.' });
     }
 
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({ success: false, message: 'File size exceeds 5MB limit. Please upload a smaller file.' });
+    }
+
+    const validExtensions = ['.pdf', '.docx', '.txt'];
+    const lowerName = req.file.originalname.toLowerCase();
+    if (!validExtensions.some(ext => lowerName.endsWith(ext))) {
+      return res.status(400).json({ success: false, message: 'Invalid file format. Only PDF, DOCX, and TXT are supported.' });
+    }
+
     let rawText = '';
     let structured = null;
     let baselineAts = null;

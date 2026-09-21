@@ -11,20 +11,20 @@ const fileFilter = (req, file, cb) => {
     'text/plain'
   ];
 
-  const allowedExtensions = ['.pdf', '.docx', '.doc', '.txt'];
+  const allowedExtensions = ['.pdf', '.docx', '.txt'];
   const hasValidExt = allowedExtensions.some(ext => file.originalname.toLowerCase().endsWith(ext));
 
   if (allowedMimeTypes.includes(file.mimetype) || hasValidExt) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only PDF, DOCX, DOC, and TXT documents are allowed.'), false);
+    cb(new Error('Invalid file type. Only PDF, DOCX, and TXT documents are allowed.'), false);
   }
 };
 
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10 MB limit
+    fileSize: 5 * 1024 * 1024 // 5 MB limit
   },
   fileFilter
 });
