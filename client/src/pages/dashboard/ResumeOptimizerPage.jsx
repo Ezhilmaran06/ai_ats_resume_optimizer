@@ -709,48 +709,68 @@ export default function ResumeOptimizerPage() {
         </div>
       )}
 
-      {/* ANTI-FABRICATION MISSING SKILLS ALERTS */}
+      {/* ANTI-FABRICATION VALIDATION LAYER: MISSING REQUIREMENTS (Commit 24) */}
       {optimizationPlan?.missingSkillsAlerts?.length > 0 && (
         <div style={{
-          padding: '16px',
+          padding: '18px 20px',
           borderRadius: '8px',
           backgroundColor: '#FFFBEB',
           border: '1px solid #FDE68A',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px'
+          gap: '12px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '700', color: '#92400E' }}>
-            <AlertTriangle size={18} />
-            <span>Anti-Fabrication Engine Notice: Missing Requirements Not Injected</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: '700', color: '#92400E' }}>
+              <ShieldCheck size={20} color="#D97706" />
+              <span>Anti-Fabrication Validation: Missing Skills Not Added Automatically</span>
+            </div>
+            <span className="badge badge-danger" style={{ fontSize: '11px' }}>Strict Candidate Integrity Active</span>
           </div>
-          <p style={{ fontSize: '13px', color: '#78350F', lineHeight: '1.5' }}>
-            The target job requires the following skills, but they do not exist in your verified profile. In accordance with ResumeAI ethical rules, they have <strong>NOT</strong> been fabricated into your resume:
+          <p style={{ fontSize: '13px', color: '#78350F', lineHeight: '1.5', margin: 0 }}>
+            The target job requires the following skills, but they do not exist in your verified profile. In accordance with ResumeAI anti-fabrication rules, they have <strong>NOT</strong> been added to your resume:
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
             {optimizationPlan.missingSkillsAlerts.map((alert, i) => (
-              <span key={i} className="badge badge-warning" style={{ fontSize: '12px' }}>
-                {alert.skill} ({alert.priority})
-              </span>
+              <div key={i} style={{
+                background: '#FFFFFF',
+                border: '1px solid #FECACA',
+                borderRadius: '6px',
+                padding: '10px 14px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{alert.skill}</div>
+                  <div style={{ fontSize: '12px', color: '#DC2626', fontWeight: 600 }}>Status: Missing</div>
+                </div>
+                <span className="badge badge-danger" style={{ fontSize: '11px' }}>
+                  Do NOT add automatically
+                </span>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* AI SUGGESTIONS REVIEW LIST */}
+      {/* AI SUGGESTIONS REVIEW LIST (Commit 24 Validation Layer) */}
       {optimizationPlan && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>AI Suggested Enhancements</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                Review each proposed modification. Accept, reject, or edit phrasing before applying to your resume.
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>AI Suggested Enhancements</h3>
+                <span className="badge badge-success" style={{ fontSize: '11px' }}>Fact Validated</span>
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                Classified into <strong>SUPPORTED</strong> (can suggest), <strong>PARTIALLY SUPPORTED</strong> (requires confirmation), and <strong>UNSUPPORTED</strong> (never added).
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={handleAcceptAll} className="btn btn-secondary btn-sm">
-                Accept All Supported
+                Accept All Supported ({optimizationPlan.supportedCount || 0})
               </button>
               <button onClick={handleRejectAll} className="btn btn-secondary btn-sm">
                 Reject All
@@ -767,6 +787,13 @@ export default function ResumeOptimizerPage() {
             {optimizationPlan.suggestions.map((item) => {
               const currentDecision = decisions[item.id] || 'PENDING';
               const isEditing = editingId === item.id;
+              const isSupported = item.status === 'SUPPORTED';
+              const isPartially = item.status === 'PARTIALLY_SUPPORTED' || item.status === 'PARTIALLY SUPPORTED';
+              const isUnsupported = item.status === 'UNSUPPORTED';
+
+              const borderAccent = isSupported ? 'var(--success)' : (isPartially ? '#D97706' : 'var(--danger)');
+              const badgeType = isSupported ? 'badge-success' : (isPartially ? 'badge-warning' : 'badge-danger');
+              const labelText = isSupported ? 'SUPPORTED • Can be suggested' : (isPartially ? 'PARTIALLY SUPPORTED • Requires confirmation' : 'UNSUPPORTED • Never automatically add');
 
               return (
                 <div
@@ -774,7 +801,7 @@ export default function ResumeOptimizerPage() {
                   style={{
                     padding: '16px',
                     border: '1px solid var(--border-color)',
-                    borderLeft: `4px solid ${item.status === 'SUPPORTED' ? 'var(--success)' : 'var(--warning)'}`,
+                    borderLeft: `4px solid ${borderAccent}`,
                     borderRadius: '8px',
                     backgroundColor: currentDecision === 'REJECTED' ? '#F8FAFC' : '#FFFFFF',
                     opacity: currentDecision === 'REJECTED' ? 0.6 : 1,
@@ -788,16 +815,24 @@ export default function ResumeOptimizerPage() {
                       <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
                         {item.title}
                       </span>
-                      <span className={`badge ${item.status === 'SUPPORTED' ? 'badge-success' : 'badge-warning'}`}>
-                        {item.status}
+                      <span className={`badge ${badgeType}`}>
+                        {labelText}
                       </span>
                     </div>
 
                     {/* Decision Action Buttons */}
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
-                        onClick={() => setDecisions({ ...decisions, [item.id]: 'ACCEPTED' })}
+                        onClick={() => {
+                          if (isUnsupported) {
+                            addToast('Anti-fabrication rule: Cannot automatically add unsupported skills.', 'warning');
+                            return;
+                          }
+                          setDecisions({ ...decisions, [item.id]: 'ACCEPTED' });
+                        }}
+                        disabled={isUnsupported}
                         className={`btn btn-sm ${currentDecision === 'ACCEPTED' ? 'btn-primary' : 'btn-secondary'}`}
+                        title={isUnsupported ? 'Unsupported suggestions cannot be automatically accepted' : 'Accept suggestion'}
                       >
                         <Check size={14} /> Accept
                       </button>
@@ -807,12 +842,14 @@ export default function ResumeOptimizerPage() {
                       >
                         <X size={14} /> Reject
                       </button>
-                      <button
-                        onClick={() => setEditingId(isEditing ? null : item.id)}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        <Edit2 size={14} /> {isEditing ? 'Done' : 'Edit'}
-                      </button>
+                      {!isUnsupported && (
+                        <button
+                          onClick={() => setEditingId(isEditing ? null : item.id)}
+                          className="btn btn-secondary btn-sm"
+                        >
+                          <Edit2 size={14} /> {isEditing ? 'Done' : 'Edit'}
+                        </button>
+                      )}
                     </div>
                   </div>
 

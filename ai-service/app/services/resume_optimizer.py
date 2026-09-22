@@ -305,11 +305,15 @@ def optimize_resume_for_role(resume: Dict[str, Any], role_data: Dict[str, Any]) 
     proj_sugs = generate_project_optimizations(resume, role_data)
     suggestions.extend(proj_sugs)
 
-    # 5. Missing requirements alerts (UNSUPPORTED)
+    # 5. Missing requirements alerts (Strictly UNSUPPORTED)
     missing_alerts = generate_missing_skill_alerts(resume, role_data)
     suggestions.extend(missing_alerts)
 
-    # Build deep copy of optimized resume draft
+    # Validate all suggestions through Anti-Fabrication validation layer
+    from app.services.fact_validator import validate_all_suggestions
+    validated_suggestions = validate_all_suggestions(suggestions, resume, role_data)
+
+    # Build deep copy of optimized resume draft using only verified supported changes
     optimized_draft = deepcopy(resume)
     if sum_sug and sum_sug.get("suggested"):
         optimized_draft["summary"] = sum_sug["suggested"]
@@ -335,16 +339,25 @@ def optimize_resume_for_role(resume: Dict[str, Any], role_data: Dict[str, Any]) 
     target_title = role_data.get("role") or role_data.get("jobTitle") or "Software Engineer"
     target_company = role_data.get("company") or "Target Company"
 
+    supported_count = sum(1 for s in validated_suggestions if s["status"] == "SUPPORTED")
+    partially_supported_count = sum(1 for s in validated_suggestions if s["status"] == "PARTIALLY_SUPPORTED")
+    unsupported_count = sum(1 for s in validated_suggestions if s["status"] == "UNSUPPORTED")
+
     return {
         "role": target_title,
         "company": target_company,
-        "totalSuggestions": len(suggestions),
-        "supportedCount": sum(1 for s in suggestions if s["status"] == "SUPPORTED"),
-        "partiallySupportedCount": sum(1 for s in suggestions if s["status"] == "PARTIALLY_SUPPORTED"),
-        "unsupportedCount": sum(1 for s in suggestions if s["status"] == "UNSUPPORTED"),
-        "suggestions": suggestions,
+        "totalSuggestions": len(validated_suggestions),
+        "supportedCount": supported_count,
+        "partiallySupportedCount": partially_supported_count,
+        "unsupportedCount": unsupported_count,
+        "suggestions": validated_suggestions,
         "missingSkillsAlerts": [
-            {"skill": s["title"].replace("Job Requires: ", ""), "status": "Missing"}
+            {
+                "skill": s["title"].replace("Job Requires: ", ""),
+                "status": "Missing",
+                "action": "Do NOT add automatically",
+                "rule": "UNSUPPORTED"
+            }
             for s in missing_alerts
         ],
         "optimizedResume": optimized_draft,

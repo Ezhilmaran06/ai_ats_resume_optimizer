@@ -21,7 +21,7 @@ TECH_DICTIONARY = {
         "serverless", "lambda", "ecs", "eks", "s3", "ec2"
     ],
     "tools": [
-        "git", "github", "gitlab", "rest api", "graphql", "microservices", "jira", "agile", 
+        "git", "github", "gitlab", "rest api", "rest apis", "restful api", "restful apis", "rest", "graphql", "microservices", "jira", "agile", 
         "scrum", "unit testing", "jest", "pytest", "postman", "system design", "webpack", 
         "vite", "kafka", "rabbitmq", "prometheus", "grafana"
     ],
@@ -45,8 +45,12 @@ ACTION_VERBS_LIST = [
 
 def format_skill_name(term: str) -> str:
     """Format technical skills with proper capitalization."""
-    uppers = {"aws", "gcp", "sql", "api", "rest api", "ci/cd", "k8s", "ecs", "eks", "s3", "ec2", "pmp", "cka", "csm", "ceh"}
-    if term.lower() in uppers:
+    term_l = term.lower()
+    if term_l in ["rest api", "rest apis", "restful api", "restful apis", "rest"]:
+        return "REST APIs"
+    
+    uppers = {"aws", "gcp", "sql", "api", "ci/cd", "k8s", "ecs", "eks", "s3", "ec2", "pmp", "cka", "csm", "ceh"}
+    if term_l in uppers:
         return term.upper()
     
     specials = {
