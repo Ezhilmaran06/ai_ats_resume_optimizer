@@ -4,6 +4,7 @@ from app.api.resume_routes import router as resume_router
 from app.api.ats_routes import router as ats_router
 from app.api.role_routes import router as role_router
 from app.api.optimizer_routes import router as optimizer_router
+from app.api.match_routes import router as match_router
 from app.config import settings
 
 app = FastAPI(
@@ -26,6 +27,7 @@ app.include_router(resume_router)
 app.include_router(ats_router)
 app.include_router(role_router)
 app.include_router(optimizer_router)
+app.include_router(match_router)
 
 @app.get("/api/ai/health")
 async def health_check():

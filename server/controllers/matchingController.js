@@ -5,7 +5,7 @@ const JobAnalysis = require('../models/JobAnalysis');
 const Activity = require('../models/Activity');
 const { matchResumeToJob } = require('../services/matching/matchingEngine');
 const { optimizeResumeForJob } = require('../services/ai/resumeOptimizer');
-const { analyzeKeywordsWithPython, getOptimizationPlanWithPython } = require('../services/ai/pythonAiClient');
+const { analyzeKeywordsWithPython, analyzeMatchWithPython, getOptimizationPlanWithPython } = require('../services/ai/pythonAiClient');
 
 // @desc    Match resume or profile against a job description
 // @route   POST /api/matching/analyze
@@ -44,17 +44,27 @@ exports.analyzeMatching = async (req, res, next) => {
       const rolePayload = {
         role: job.role,
         company: job.company,
-        extractedSkills: jobAnalysis.skills?.map(s => s.name) || [],
-        requiredSkills: jobAnalysis.requiredSkills?.map(s => s.name) || []
+        extractedSkills: (jobAnalysis.requiredSkills || []).concat(jobAnalysis.preferredSkills || []).concat(jobAnalysis.skills?.map(s => s.name) || []),
+        requiredSkills: jobAnalysis.requiredSkills || [],
+        preferredSkills: jobAnalysis.preferredSkills || []
       };
-      const pyKwResults = await analyzeKeywordsWithPython(candidateData.toObject(), rolePayload);
+
+      const [pyMatchResults, pyKwResults] = await Promise.all([
+        analyzeMatchWithPython(candidateData.toObject(), rolePayload),
+        analyzeKeywordsWithPython(candidateData.toObject(), rolePayload)
+      ]);
+
       matchResults = {
-        matchPercentage: pyKwResults.matchPercentage,
+        matchPercentage: pyMatchResults.matchPercentage,
+        matchedSkills: pyMatchResults.matchedSkills || [],
+        partialSkills: pyMatchResults.partialSkills || [],
+        missingSkills: pyMatchResults.missingSkills || [],
+        explanations: pyMatchResults.explanations || {},
         summary: {
-          matchedCount: pyKwResults.matchedCount,
-          partialCount: pyKwResults.partialCount,
-          missingCount: pyKwResults.missingCount,
-          totalJobSkills: pyKwResults.totalCount
+          matchedCount: pyMatchResults.matchedSkills?.length || pyKwResults.matchedCount,
+          partialCount: pyMatchResults.partialSkills?.length || pyKwResults.partialCount,
+          missingCount: pyMatchResults.missingSkills?.length || pyKwResults.missingCount,
+          totalJobSkills: pyMatchResults.totalRequirements || pyKwResults.totalCount
         },
         keywords: {
           list: pyKwResults.keywords || [],
@@ -65,7 +75,24 @@ exports.analyzeMatching = async (req, res, next) => {
       };
     } catch (pyErr) {
       console.warn('[Matching Controller] Python service error, using local matcher:', pyErr.message);
-      matchResults = matchResumeToJob(candidateData, jobAnalysis);
+      const fallbackResult = matchResumeToJob(candidateData, jobAnalysis);
+      matchResults = {
+        matchPercentage: fallbackResult.matchPercentage,
+        matchedSkills: fallbackResult.matchedItems || [],
+        partialSkills: fallbackResult.partialItems || [],
+        missingSkills: fallbackResult.missingItems || [],
+        explanations: (fallbackResult.matchedItems || []).reduce((acc, m) => {
+          acc[m.name] = `${m.matchType || 'Verified'} match in candidate resume.`;
+          return acc;
+        }, {}),
+        summary: fallbackResult.summary,
+        keywords: {
+          list: [],
+          found: fallbackResult.foundKeywords || [],
+          partial: fallbackResult.relatedKeywords || [],
+          missing: fallbackResult.missingKeywords || []
+        }
+      };
     }
 
     res.status(200).json({

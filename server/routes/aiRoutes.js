@@ -1,10 +1,11 @@
-const express = require('express');
 const {
   analyzeRoleWithPython,
   analyzeKeywordsWithPython,
+  analyzeMatchWithPython,
   getOptimizationPlanWithPython
 } = require('../services/ai/pythonAiClient');
 const { analyzeJobDescription } = require('../services/ai/jobAnalyzer');
+const { matchResumeToJob } = require('../services/matching/matchingEngine');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -37,6 +38,53 @@ router.post('/role/analyze', async (req, res, next) => {
       return res.status(200).json({
         success: true,
         data: fallbackAnalysis
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @desc    POST /api/ai/match/analyze
+ * @access  Public / Private
+ */
+router.post('/match/analyze', async (req, res, next) => {
+  try {
+    const { resume, role, job, description, rawText } = req.body;
+    if (!resume) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide resume data for matching.'
+      });
+    }
+
+    const rolePayload = role || job || {
+      role: 'Software Engineer',
+      description: description || rawText || ''
+    };
+
+    try {
+      const matchResult = await analyzeMatchWithPython(resume, rolePayload);
+      return res.status(200).json({
+        success: true,
+        data: matchResult
+      });
+    } catch (pyErr) {
+      console.warn('[AI Routes] Python service fallback for semantic matching:', pyErr.message);
+      const fallbackResult = matchResumeToJob(resume, rolePayload);
+      return res.status(200).json({
+        success: true,
+        data: {
+          matchedSkills: fallbackResult.matchedItems || [],
+          partialSkills: fallbackResult.partialItems || [],
+          missingSkills: fallbackResult.missingItems || [],
+          matchPercentage: fallbackResult.matchPercentage || 75,
+          explanations: (fallbackResult.matchedItems || []).reduce((acc, m) => {
+            acc[m.name] = `${m.matchType || 'Verified'} match in candidate resume.`;
+            return acc;
+          }, {})
+        }
       });
     }
   } catch (err) {

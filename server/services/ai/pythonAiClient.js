@@ -88,6 +88,17 @@ async function getOptimizationPlanWithPython(resume, role) {
 }
 
 /**
+ * Semantic resume role matching via Python engine
+ */
+async function analyzeMatchWithPython(resume, role) {
+  const response = await pythonClient.post('/api/ai/match/analyze', {
+    resume,
+    role
+  });
+  return response.data.data;
+}
+
+/**
  * Live ATS score recalculation
  */
 async function recalculateAtsWithPython(resume, role = null) {
@@ -104,6 +115,7 @@ module.exports = {
   analyzeAtsWithPython,
   analyzeRoleWithPython,
   analyzeKeywordsWithPython,
+  analyzeMatchWithPython,
   getOptimizationPlanWithPython,
   recalculateAtsWithPython
 };
