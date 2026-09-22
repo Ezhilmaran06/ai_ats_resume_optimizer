@@ -167,19 +167,84 @@ export default function ResumeOptimizerPage() {
     }
   };
 
+  // Job input state for Commit 19
+  const [jobInputMode, setJobInputMode] = useState('new'); // 'new' | 'saved'
+  const [jdFormat, setJdFormat] = useState('paste'); // 'paste' | 'upload'
+  const [manualRole, setManualRole] = useState('Software Engineer');
+  const [manualCompany, setManualCompany] = useState('');
+  const [manualJobUrl, setManualJobUrl] = useState('');
+  const [pastedJd, setPastedJd] = useState('');
+  const [jobFile, setJobFile] = useState(null);
+  const [analyzingJob, setAnalyzingJob] = useState(false);
+
+  const handleJobFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowed = ['.pdf', '.docx', '.doc', '.txt'];
+      const isAllowed = allowed.some(ext => file.name.toLowerCase().endsWith(ext));
+      if (!isAllowed) {
+        addToast('Please upload a PDF, DOCX, or TXT file.', 'warning');
+        return;
+      }
+      setJobFile(file);
+      addToast(`Attached ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, 'info');
+    }
+  };
+
+  const handleAnalyzeAndSetJob = async (e) => {
+    if (e) e.preventDefault();
+    if (jdFormat === 'paste' && (!pastedJd || pastedJd.trim().length < 20)) {
+      addToast('Please paste a job description (at least 20 characters).', 'warning');
+      return;
+    }
+    if (jdFormat === 'upload' && !jobFile) {
+      addToast('Please upload a PDF, DOCX, or TXT file containing the job description.', 'warning');
+      return;
+    }
+
+    try {
+      setAnalyzingJob(true);
+      const formData = new FormData();
+      formData.append('role', manualRole.trim() || 'Software Engineer');
+      if (manualCompany.trim()) formData.append('company', manualCompany.trim());
+      if (manualJobUrl.trim()) formData.append('jobUrl', manualJobUrl.trim());
+
+      if (jdFormat === 'upload' && jobFile) {
+        formData.append('jobFile', jobFile);
+      } else {
+        formData.append('rawText', pastedJd);
+      }
+
+      const res = await api.post('/jobs', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.success) {
+        const createdJob = res.data.data.job;
+        setJobs(prev => [createdJob, ...prev.filter(j => j._id !== createdJob._id)]);
+        setSelectedJobId(createdJob._id);
+        addToast(`Target role "${createdJob.role}" loaded successfully!`, 'success');
+      }
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Failed to process job description.', 'error');
+    } finally {
+      setAnalyzingJob(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header Banner */}
       <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '700' }}>AI Resume Tailoring & Optimizer</h2>
+            <h2 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)' }}>Optimize for Role</h2>
             <span className="badge badge-success" style={{ gap: '4px' }}>
               <ShieldCheck size={14} /> Anti-Fabrication Engine
             </span>
           </div>
-          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Compare resume competencies against target job requirements, reorder verified skills, and sharpen achievement phrasing.
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            Input target job description, analyze role requirements, and optimize your resume with strict factual integrity.
           </p>
         </div>
 
@@ -201,37 +266,236 @@ export default function ResumeOptimizerPage() {
         </div>
       </div>
 
-      {/* Selectors Grid */}
-      <div className="card" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      {/* Step 1: Select Resume to Tailor */}
+      <div className="card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <span style={{
+            background: 'var(--primary)',
+            color: 'white',
+            borderRadius: '50%',
+            width: '24px',
+            height: '24px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 700
+          }}>1</span>
+          <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>Select Your Resume</h3>
+        </div>
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">1. Choose Resume to Tailor</label>
           <select
             className="form-select"
             value={selectedResumeId}
             onChange={(e) => setSelectedResumeId(e.target.value)}
+            style={{ fontWeight: 500 }}
           >
             {resumes.map(r => (
               <option key={r._id} value={r._id}>
                 {r.title} ({r.templateId}) {r.targetCompany ? `• ${r.targetCompany}` : ''}
               </option>
             ))}
+            {resumes.length === 0 && (
+              <option value="">No resumes found. Please create or upload a resume first.</option>
+            )}
           </select>
+        </div>
+      </div>
+
+      {/* Step 2: Role & Job Description Input (Commit 19) */}
+      <div className="card" style={{ padding: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{
+              background: 'var(--primary)',
+              color: 'white',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              fontWeight: 700
+            }}>2</span>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>Target Role & Job Description</h3>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                Provide the job description by typing the role, pasting the text, or uploading a document (PDF, DOCX, TXT).
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-subtle)', padding: '3px', borderRadius: '6px' }}>
+            <button
+              type="button"
+              onClick={() => setJobInputMode('new')}
+              className={`btn btn-sm ${jobInputMode === 'new' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '12.5px', padding: '4px 12px' }}
+            >
+              Provide Job Description
+            </button>
+            <button
+              type="button"
+              onClick={() => setJobInputMode('saved')}
+              className={`btn btn-sm ${jobInputMode === 'saved' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '12.5px', padding: '4px 12px' }}
+            >
+              Select Saved Role ({jobs.length})
+            </button>
+          </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label className="form-label">2. Target Job Posting</label>
-          <select
-            className="form-select"
-            value={selectedJobId}
-            onChange={(e) => setSelectedJobId(e.target.value)}
-          >
-            {jobs.map(j => (
-              <option key={j._id} value={j._id}>
-                {j.role} — {j.company}
-              </option>
-            ))}
-          </select>
-        </div>
+        {jobInputMode === 'saved' ? (
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Choose from Previously Analyzed Roles</label>
+            <select
+              className="form-select"
+              value={selectedJobId}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+            >
+              {jobs.map(j => (
+                <option key={j._id} value={j._id}>
+                  {j.role} — {j.company} {j.createdAt ? `(${new Date(j.createdAt).toLocaleDateString()})` : ''}
+                </option>
+              ))}
+              {jobs.length === 0 && (
+                <option value="">No saved jobs yet. Switch to "Provide Job Description" above.</option>
+              )}
+            </select>
+          </div>
+        ) : (
+          <form onSubmit={handleAnalyzeAndSetJob} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Primary & Optional Fields */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontWeight: 600 }}>
+                  1. Target Role / Job Title <span style={{ color: 'var(--danger)' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Software Engineer"
+                  value={manualRole}
+                  onChange={(e) => setManualRole(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Company Name (Optional)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. CloudScale Technologies"
+                  value={manualCompany}
+                  onChange={(e) => setManualCompany(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Job Posting URL (Optional)</label>
+                <input
+                  type="url"
+                  className="form-input"
+                  placeholder="https://company.com/careers/role"
+                  value={manualJobUrl}
+                  onChange={(e) => setManualJobUrl(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Input Type Selector: Paste vs Upload */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Job Description Format:</span>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="jdFormat"
+                    value="paste"
+                    checked={jdFormat === 'paste'}
+                    onChange={() => setJdFormat('paste')}
+                  />
+                  <span>Paste Job Description Text</span>
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="jdFormat"
+                    value="upload"
+                    checked={jdFormat === 'upload'}
+                    onChange={() => setJdFormat('upload')}
+                  />
+                  <span>Upload Document (PDF, DOCX, TXT)</span>
+                </label>
+              </div>
+
+              {jdFormat === 'paste' ? (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <textarea
+                    className="form-textarea"
+                    style={{ minHeight: '140px', fontSize: '13px', fontFamily: 'inherit' }}
+                    placeholder="Paste the target job description, responsibilities, technical requirements, and qualifications here..."
+                    value={pastedJd}
+                    onChange={(e) => setPastedJd(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div style={{
+                  border: '2px dashed var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  backgroundColor: 'var(--bg-subtle)',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt"
+                    onChange={handleJobFileUpload}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                    <FileText size={32} color="var(--primary)" />
+                    <div style={{ fontSize: '14px', fontWeight: 600 }}>
+                      {jobFile ? jobFile.name : 'Click or Drag & Drop Job Description Document'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Supports PDF, DOCX, and TXT files (up to 5 MB)
+                    </div>
+                    {jobFile && (
+                      <span className="badge badge-success" style={{ marginTop: '4px' }}>
+                        ✓ Ready: {(jobFile.size / 1024).toFixed(1)} KB
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '10px', marginTop: '4px' }}>
+              <button
+                type="submit"
+                disabled={analyzingJob}
+                className="btn btn-primary"
+                style={{ padding: '8px 20px' }}
+              >
+                <Sparkles size={16} />
+                <span>{analyzingJob ? 'Processing Job Description...' : 'Analyze Role & Match Resume'}</span>
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Matching Breakdown Cards */}
