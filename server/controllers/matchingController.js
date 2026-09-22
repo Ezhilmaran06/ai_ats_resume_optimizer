@@ -57,9 +57,10 @@ exports.analyzeMatching = async (req, res, next) => {
           totalJobSkills: pyKwResults.totalCount
         },
         keywords: {
-          found: pyKwResults.keywords.filter(k => k.status === 'MATCHED'),
-          partial: pyKwResults.keywords.filter(k => k.status === 'PARTIAL'),
-          missing: pyKwResults.keywords.filter(k => k.status === 'MISSING')
+          list: pyKwResults.keywords || [],
+          found: (pyKwResults.keywords || []).filter(k => k.status === 'MATCHED'),
+          partial: (pyKwResults.keywords || []).filter(k => k.status === 'PARTIAL'),
+          missing: (pyKwResults.keywords || []).filter(k => k.status === 'MISSING')
         }
       };
     } catch (pyErr) {

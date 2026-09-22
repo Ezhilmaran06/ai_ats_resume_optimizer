@@ -35,6 +35,7 @@ export default function ResumeOptimizerPage() {
   const [editedTexts, setEditedTexts] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [applying, setApplying] = useState(false);
+  const [keywordFilter, setKeywordFilter] = useState('ALL'); // 'ALL' | 'MATCHED' | 'PARTIAL' | 'MISSING'
 
   useEffect(() => {
     fetchResumesAndJobs();
@@ -596,34 +597,114 @@ export default function ResumeOptimizerPage() {
       )}
 
       {/* Matching Breakdown Cards */}
+      {/* KEYWORD ANALYSIS ENGINE (Commit 21) */}
       {matchingData && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-          <div className="card">
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>Overall Match Score</div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--primary)', marginTop: '4px' }}>
-              {matchingData.matchPercentage}%
+        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: '700', margin: 0 }}>Role Keyword Analysis Engine</h3>
+                <span className="badge badge-info" style={{ fontSize: '11px' }}>Non-String Heuristic Matching</span>
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                Identifies verified matches, semantic synonyms, partial mentions, and missing requirements by importance level.
+              </p>
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              {matchingData.summary?.matchedCount} Matched • {matchingData.summary?.partialCount} Partial • {matchingData.summary?.missingCount} Missing
+
+            {/* Quick Metrics */}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center', padding: '6px 14px', background: 'var(--bg-subtle)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>MATCH SCORE</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>{matchingData.matchPercentage}%</div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  onClick={() => setKeywordFilter('ALL')}
+                  className={`btn btn-sm ${keywordFilter === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '12px', padding: '4px 10px' }}
+                >
+                  All ({(matchingData.keywords?.list || []).length || matchingData.summary?.totalJobSkills || 0})
+                </button>
+                <button
+                  onClick={() => setKeywordFilter('MATCHED')}
+                  className={`btn btn-sm ${keywordFilter === 'MATCHED' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '12px', padding: '4px 10px', color: keywordFilter === 'MATCHED' ? '#fff' : 'var(--success)' }}
+                >
+                  ✓ Matched ({matchingData.summary?.matchedCount || 0})
+                </button>
+                <button
+                  onClick={() => setKeywordFilter('PARTIAL')}
+                  className={`btn btn-sm ${keywordFilter === 'PARTIAL' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '12px', padding: '4px 10px', color: keywordFilter === 'PARTIAL' ? '#fff' : '#D97706' }}
+                >
+                  ⚠ Partial ({matchingData.summary?.partialCount || 0})
+                </button>
+                <button
+                  onClick={() => setKeywordFilter('MISSING')}
+                  className={`btn btn-sm ${keywordFilter === 'MISSING' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '12px', padding: '4px 10px', color: keywordFilter === 'MISSING' ? '#fff' : 'var(--danger)' }}
+                >
+                  ✕ Missing ({matchingData.summary?.missingCount || 0})
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="card">
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>Found Keywords (Verified)</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '8px' }}>
-              {(matchingData.keywords?.found || []).slice(0, 5).map((k, i) => (
-                <span key={i} className="badge badge-success" style={{ fontSize: '11.5px' }}>✓ {k.keyword}</span>
-              ))}
-            </div>
-          </div>
+          {/* Keywords Table */}
+          <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 14px' }}>Target Keyword</th>
+                  <th style={{ padding: '10px 14px' }}>Match Status</th>
+                  <th style={{ padding: '10px 14px' }}>Importance Level</th>
+                  <th style={{ padding: '10px 14px' }}>Semantic Verification Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {((matchingData.keywords?.list && matchingData.keywords.list.length > 0)
+                  ? matchingData.keywords.list
+                  : [
+                      ...(matchingData.keywords?.found || []).map(k => ({ ...k, status: 'MATCHED', symbol: '✓', importanceLabel: `${k.importance || 'High'} importance` })),
+                      ...(matchingData.keywords?.partial || []).map(k => ({ ...k, status: 'PARTIAL', symbol: '⚠', importanceLabel: `${k.importance || 'Medium'} importance` })),
+                      ...(matchingData.keywords?.missing || []).map(k => ({ ...k, status: 'MISSING', symbol: '✕', importanceLabel: `${k.importance || 'High'} importance` }))
+                    ]
+                )
+                .filter(k => keywordFilter === 'ALL' || k.status === keywordFilter)
+                .map((kw, i) => {
+                  const isMatched = kw.status === 'MATCHED';
+                  const isPartial = kw.status === 'PARTIAL';
+                  const isMissing = kw.status === 'MISSING';
 
-          <div className="card">
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>Missing Keywords</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '8px' }}>
-              {(matchingData.keywords?.missing || []).slice(0, 5).map((k, i) => (
-                <span key={i} className="badge badge-danger" style={{ fontSize: '11.5px' }}>✕ {k.keyword}</span>
-              ))}
-            </div>
+                  const badgeClass = isMatched ? 'badge-success' : (isPartial ? 'badge-warning' : 'badge-danger');
+                  const importanceClass = kw.importance === 'High' || kw.importanceLabel?.includes('High') 
+                    ? 'badge-danger' 
+                    : (kw.importance === 'Medium' || kw.importanceLabel?.includes('Medium') ? 'badge-info' : 'badge-neutral');
+
+                  return (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)', background: i % 2 === 0 ? '#fff' : 'var(--bg-subtle)' }}>
+                      <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {kw.keyword || kw.name}
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span className={`badge ${badgeClass}`} style={{ gap: '4px', fontWeight: 600 }}>
+                          <span>{kw.symbol || (isMatched ? '✓' : (isPartial ? '⚠' : '✕'))}</span>
+                          <span>{kw.status}</span>
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <span className={`badge ${importanceClass}`} style={{ fontSize: '11px' }}>
+                          {kw.importanceLabel || `${kw.importance || 'Medium'} importance`}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>
+                        {kw.similarityNote || kw.reason || (isMatched ? 'Exact or semantic match verified.' : (isPartial ? 'Partial mention detected.' : 'Not found in candidate profile.'))}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
