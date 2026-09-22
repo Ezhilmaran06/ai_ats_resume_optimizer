@@ -143,11 +143,11 @@ exports.optimizeResume = async (req, res, next) => {
       const rolePayload = {
         role: job.role,
         company: job.company,
-        extractedSkills: jobAnalysis.skills?.map(s => s.name) || [],
-        requiredSkills: jobAnalysis.requiredSkills?.map(s => s.name) || []
+        extractedSkills: (jobAnalysis.requiredSkills || []).concat(jobAnalysis.preferredSkills || []).concat(jobAnalysis.skills?.map(s => s.name) || []),
+        requiredSkills: jobAnalysis.requiredSkills || [],
+        preferredSkills: jobAnalysis.preferredSkills || []
       };
-      const pyResp = await getOptimizationPlanWithPython(resume.toObject(), rolePayload);
-      optimizationPlan = pyResp.data;
+      optimizationPlan = await optimizeResumeWithPython(resume.toObject(), rolePayload);
     } catch (pyErr) {
       console.warn('[Matching Controller] Python optimizer error, using local optimizer:', pyErr.message);
       optimizationPlan = await optimizeResumeForJob(resume, job, jobAnalysis);

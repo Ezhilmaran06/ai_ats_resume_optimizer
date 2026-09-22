@@ -92,4 +92,40 @@ router.post('/match/analyze', async (req, res, next) => {
   }
 });
 
+/**
+ * @desc    POST /api/ai/resume/optimize
+ * @access  Public / Private
+ */
+router.post('/resume/optimize', async (req, res, next) => {
+  try {
+    const { resume, role, job } = req.body;
+    if (!resume) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide resume data to optimize.'
+      });
+    }
+
+    const { optimizeResumeWithPython } = require('../services/ai/pythonAiClient');
+    const { optimizeResumeForJob } = require('../services/ai/resumeOptimizer');
+
+    try {
+      const plan = await optimizeResumeWithPython(resume, role || job || {});
+      return res.status(200).json({
+        success: true,
+        data: plan
+      });
+    } catch (pyErr) {
+      console.warn('[AI Routes] Python service fallback for resume optimizer:', pyErr.message);
+      const fallbackPlan = await optimizeResumeForJob(resume, role || job || {}, { requirementsTable: [] });
+      return res.status(200).json({
+        success: true,
+        data: fallbackPlan
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

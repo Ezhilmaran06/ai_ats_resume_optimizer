@@ -35,3 +35,19 @@ async def recalculate_score(payload: Dict[str, Any]):
         "success": True,
         "data": score_report
     }
+
+@router.post("/optimize")
+async def optimize_resume(payload: Dict[str, Any]):
+    resume_data = payload.get("resume")
+    role_data = payload.get("role") or payload.get("job") or {}
+    
+    if not resume_data:
+        raise HTTPException(status_code=400, detail="Missing candidate resume data.")
+
+    from app.services.resume_optimizer import optimize_resume_for_role
+    optimized_plan = optimize_resume_for_role(resume_data, role_data)
+    return {
+        "success": True,
+        "data": optimized_plan
+    }
+

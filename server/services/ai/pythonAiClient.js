@@ -77,10 +77,21 @@ async function analyzeKeywordsWithPython(resume, role) {
 }
 
 /**
+ * Run AI resume optimizer with anti-fabrication rules via Python engine
+ */
+async function optimizeResumeWithPython(resume, role) {
+  const response = await pythonClient.post('/api/ai/resume/optimize', {
+    resume,
+    role
+  });
+  return response.data.data;
+}
+
+/**
  * Generate optimization plan with anti-fabrication constraints
  */
 async function getOptimizationPlanWithPython(resume, role) {
-  const response = await pythonClient.post('/api/ai/optimizer/plan', {
+  const response = await pythonClient.post('/api/ai/resume/optimize', {
     resume,
     role
   });
@@ -116,6 +127,7 @@ module.exports = {
   analyzeRoleWithPython,
   analyzeKeywordsWithPython,
   analyzeMatchWithPython,
+  optimizeResumeWithPython,
   getOptimizationPlanWithPython,
   recalculateAtsWithPython
 };
