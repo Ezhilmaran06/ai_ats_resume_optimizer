@@ -86,12 +86,28 @@ exports.createAndAnalyzeJob = async (req, res, next) => {
     try {
       const pyAnalysis = await analyzeRoleWithPython(role || 'Target Role', rawText, company || '');
       analysisResult = {
-        extractedRole: pyAnalysis.role,
+        extractedRole: pyAnalysis.jobTitle || pyAnalysis.role,
         extractedCompany: pyAnalysis.company,
-        requiredSkills: (pyAnalysis.requiredSkills || []).map(s => ({ name: s, importance: 'HIGH', category: 'Required' })),
-        preferredSkills: (pyAnalysis.preferredSkills || []).map(s => ({ name: s, importance: 'MEDIUM', category: 'Preferred' })),
-        skills: (pyAnalysis.extractedSkills || []).map(s => ({ name: s, importance: 'HIGH', category: 'Technical' })),
-        responsibilities: pyAnalysis.responsibilities || []
+        requiredSkills: pyAnalysis.requiredSkills || [],
+        preferredSkills: pyAnalysis.preferredSkills || [],
+        programmingLanguages: pyAnalysis.programmingLanguages || [],
+        frameworks: pyAnalysis.frameworks || [],
+        databases: pyAnalysis.databases || [],
+        cloudTechnologies: pyAnalysis.cloudTechnologies || [],
+        tools: pyAnalysis.tools || [],
+        softSkills: pyAnalysis.softSkills || [],
+        responsibilities: pyAnalysis.responsibilities || [],
+        educationRequirements: pyAnalysis.education || [],
+        experienceRequirements: pyAnalysis.experience || [],
+        certifications: pyAnalysis.certifications || [],
+        domainKeywords: pyAnalysis.keywords || [],
+        actionVerbs: pyAnalysis.actionVerbs || [],
+        requirementsTable: (pyAnalysis.classifiedRequirements || []).map(r => ({
+          name: r.name,
+          category: r.category === 'Programming Languages' ? 'Programming Language' : (r.category || 'Other'),
+          priority: r.classification || 'Required',
+          importance: r.importance || 'High'
+        }))
       };
     } catch (pyErr) {
       console.warn('[Job Controller] Python role analyzer error, using local fallback:', pyErr.message);

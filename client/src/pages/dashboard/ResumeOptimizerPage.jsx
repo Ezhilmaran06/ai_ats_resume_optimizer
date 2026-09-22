@@ -232,6 +232,8 @@ export default function ResumeOptimizerPage() {
     }
   };
 
+  const selectedJob = jobs.find(j => j._id === selectedJobId);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header Banner */}
@@ -497,6 +499,101 @@ export default function ResumeOptimizerPage() {
           </form>
         )}
       </div>
+
+      {/* AI ROLE ANALYSIS BREAKDOWN (Commit 20) */}
+      {selectedJob && selectedJob.analysis && (
+        <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Briefcase size={20} color="var(--primary)" />
+              <h3 style={{ fontSize: '17px', fontWeight: '700', margin: 0 }}>
+                Role Analysis: {selectedJob.analysis.extractedRole || selectedJob.role}
+              </h3>
+              <span className="badge badge-info">{selectedJob.analysis.extractedCompany || selectedJob.company}</span>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <span className="badge badge-danger">
+                {selectedJob.analysis.requiredSkills?.length || 0} Required
+              </span>
+              <span className="badge badge-primary">
+                {selectedJob.analysis.preferredSkills?.length || 0} Preferred
+              </span>
+              {(selectedJob.analysis.optionalSkills?.length > 0) && (
+                <span className="badge badge-neutral">
+                  {selectedJob.analysis.optionalSkills.length} Optional
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Classified Requirements: Required vs Preferred vs Optional */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+            {/* Required */}
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#991B1B', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Required Skills (Mandatory)</span>
+                <span className="badge badge-danger" style={{ fontSize: '10px' }}>High Importance</span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {(selectedJob.analysis.requiredSkills || []).map((s, idx) => (
+                  <span key={idx} className="badge badge-danger" style={{ fontSize: '12px' }}>
+                    {typeof s === 'string' ? s : s.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Preferred */}
+            <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', padding: '12px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1E40AF', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Preferred Skills (Plus)</span>
+                <span className="badge badge-info" style={{ fontSize: '10px' }}>Medium Importance</span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {(selectedJob.analysis.preferredSkills || []).map((s, idx) => (
+                  <span key={idx} className="badge badge-info" style={{ fontSize: '12px' }}>
+                    {typeof s === 'string' ? s : s.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Categorized Technical Architecture */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12.5px' }}>
+            {selectedJob.analysis.programmingLanguages?.length > 0 && (
+              <div style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '6px' }}>
+                <strong>Languages:</strong> {selectedJob.analysis.programmingLanguages.join(', ')}
+              </div>
+            )}
+            {selectedJob.analysis.frameworks?.length > 0 && (
+              <div style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '6px' }}>
+                <strong>Frameworks:</strong> {selectedJob.analysis.frameworks.join(', ')}
+              </div>
+            )}
+            {selectedJob.analysis.databases?.length > 0 && (
+              <div style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '6px' }}>
+                <strong>Databases:</strong> {selectedJob.analysis.databases.join(', ')}
+              </div>
+            )}
+            {selectedJob.analysis.cloudTechnologies?.length > 0 && (
+              <div style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '6px' }}>
+                <strong>Cloud / DevOps:</strong> {selectedJob.analysis.cloudTechnologies.join(', ')}
+              </div>
+            )}
+            {selectedJob.analysis.tools?.length > 0 && (
+              <div style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '6px' }}>
+                <strong>Tools:</strong> {selectedJob.analysis.tools.join(', ')}
+              </div>
+            )}
+            {selectedJob.analysis.softSkills?.length > 0 && (
+              <div style={{ padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: '6px' }}>
+                <strong>Soft Skills:</strong> {selectedJob.analysis.softSkills.join(', ')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Matching Breakdown Cards */}
       {matchingData && (

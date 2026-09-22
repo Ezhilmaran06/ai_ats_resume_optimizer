@@ -13,6 +13,7 @@ const skillsRoutes = require('./routes/skillsRoutes');
 const interviewRoutes = require('./routes/interviewRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/skills', skillsRoutes);
 app.use('/api/interview', interviewRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiRoutes);
 
 const path = require('path');
 const fs = require('fs');
