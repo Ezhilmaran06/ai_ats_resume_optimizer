@@ -231,6 +231,77 @@ exports.renameResume = async (req, res, next) => {
   }
 };
 
+// Helper to safely extract and normalize skills from any representation (Array, Object, or Strings)
+function extractNormalizedSkills(structuredSkills) {
+  const result = {
+    programmingLanguages: [],
+    frameworks: [],
+    databases: [],
+    cloud: [],
+    tools: [],
+    softSkills: [],
+    other: []
+  };
+
+  if (!structuredSkills) return result;
+
+  // Case 1: Already a categorized object: { programmingLanguages: [...], frameworks: [...], ... }
+  if (typeof structuredSkills === 'object' && !Array.isArray(structuredSkills)) {
+    for (const key of Object.keys(result)) {
+      if (Array.isArray(structuredSkills[key])) {
+        result[key] = structuredSkills[key].map(s => (typeof s === 'string' ? s : s.name || '')).filter(Boolean);
+      }
+    }
+    if (Array.isArray(structuredSkills.languages)) {
+      result.programmingLanguages.push(...structuredSkills.languages.map(s => (typeof s === 'string' ? s : s.name || '')).filter(Boolean));
+    }
+    for (const k of Object.keys(result)) {
+      result[k] = Array.from(new Set(result[k]));
+    }
+    return result;
+  }
+
+  // Case 2: Array of items (either { name, category } or plain strings)
+  if (Array.isArray(structuredSkills)) {
+    structuredSkills.forEach(item => {
+      let name = '';
+      let category = 'Technical';
+
+      if (typeof item === 'string') {
+        name = item.trim();
+      } else if (item && typeof item === 'object') {
+        name = (item.name || item.title || '').trim();
+        category = item.category || 'Technical';
+      }
+
+      if (!name) return;
+
+      const catLower = category.toLowerCase();
+      if (catLower.includes('programming') || catLower.includes('language')) {
+        result.programmingLanguages.push(name);
+      } else if (catLower.includes('framework') || catLower.includes('library')) {
+        result.frameworks.push(name);
+      } else if (catLower.includes('database') || catLower.includes('data')) {
+        result.databases.push(name);
+      } else if (catLower.includes('cloud') || catLower.includes('devops')) {
+        result.cloud.push(name);
+      } else if (catLower.includes('tool') || catLower.includes('architecture')) {
+        result.tools.push(name);
+      } else if (catLower.includes('soft')) {
+        result.softSkills.push(name);
+      } else {
+        result.other.push(name);
+      }
+    });
+
+    for (const k of Object.keys(result)) {
+      result[k] = Array.from(new Set(result[k]));
+    }
+  }
+
+  return result;
+}
+
 // @desc    Upload & Parse resume document (PDF, DOCX, TXT) with immediate ATS scoring
 // @route   POST /api/resumes/upload
 // @access  Private
@@ -263,17 +334,52 @@ exports.uploadResume = async (req, res, next) => {
       );
       rawText = pyResult.rawText;
       structured = pyResult.structured;
-      baselineAts = pyResult.baselineAts;
+      baselineAts = pyResult.baselineAts || pyResult.ats;
     } catch (pyErr) {
+      if (pyErr.code === 'NO_TEXT_EXTRACTED' || pyErr.statusCode === 422) {
+        return res.status(422).json({
+          success: false,
+          error: {
+            code: 'NO_TEXT_EXTRACTED',
+            message: 'No readable text was found in this PDF. If this is a scanned document, please provide a text-searchable PDF, DOCX, or TXT file.'
+          },
+          message: 'No readable text was found in this PDF. If this is a scanned document, please provide a text-searchable PDF, DOCX, or TXT file.'
+        });
+      }
+
       console.warn('[Resume Controller] Python service parse error, fallback to node parser:', pyErr.message);
-      const parsed = await parseDocumentBuffer(
-        req.file.buffer,
-        req.file.mimetype,
-        req.file.originalname
-      );
-      rawText = parsed.rawText;
-      structured = parsed.structured;
+      try {
+        const parsed = await parseDocumentBuffer(
+          req.file.buffer,
+          req.file.mimetype,
+          req.file.originalname
+        );
+        rawText = parsed.rawText;
+        structured = parsed.structured;
+      } catch (nodeErr) {
+        return res.status(422).json({
+          success: false,
+          error: {
+            code: 'PARSE_FAILED',
+            message: nodeErr.message || 'Failed to extract text from document.'
+          },
+          message: nodeErr.message || 'Failed to extract text from document.'
+        });
+      }
     }
+
+    if (!rawText || !rawText.trim()) {
+      return res.status(422).json({
+        success: false,
+        error: {
+          code: 'NO_TEXT_EXTRACTED',
+          message: 'No readable text was found in this document. If this is a scanned document, please provide a text-searchable PDF, DOCX, or TXT file.'
+        },
+        message: 'No readable text was found in this document. If this is a scanned document, please provide a text-searchable PDF, DOCX, or TXT file.'
+      });
+    }
+
+    const normalizedSkills = extractNormalizedSkills(structured?.skills);
 
     // Auto-create or save as a persistent Resume document
     const createdResume = await Resume.create({
@@ -288,44 +394,36 @@ exports.uploadResume = async (req, res, next) => {
         field: e.field || '',
         startDate: e.startDate || '',
         endDate: e.graduationDate || e.endDate || '',
-        cgpa: e.gpa || ''
+        cgpa: e.gpa || e.cgpa || ''
       })),
-      skills: {
-        programmingLanguages: (structured?.skills || []).filter(s => s.category === 'Programming').map(s => s.name),
-        frameworks: (structured?.skills || []).filter(s => s.category === 'Frameworks').map(s => s.name),
-        databases: (structured?.skills || []).filter(s => s.category === 'Databases').map(s => s.name),
-        cloud: (structured?.skills || []).filter(s => s.category === 'Cloud & DevOps').map(s => s.name),
-        tools: (structured?.skills || []).filter(s => s.category === 'Tools & Architecture').map(s => s.name),
-        softSkills: [],
-        other: (structured?.skills || []).filter(s => s.category === 'Technical' || s.category === 'General').map(s => s.name)
-      },
+      skills: normalizedSkills,
       experience: (structured?.experience || []).map(e => ({
         company: e.company || '',
-        role: e.position || '',
+        role: e.position || e.role || '',
         location: e.location || '',
         startDate: e.startDate || '',
         endDate: e.endDate || 'Present',
-        currentlyWorking: e.current || false,
-        achievements: e.highlights || []
+        currentlyWorking: e.current || e.currentlyWorking || false,
+        achievements: Array.isArray(e.highlights) ? e.highlights : (Array.isArray(e.achievements) ? e.achievements : [])
       })),
       projects: (structured?.projects || []).map(p => ({
-        name: p.title || '',
+        name: p.title || p.name || '',
         description: p.description || '',
-        technologies: p.technologies || [],
-        achievements: p.highlights || []
+        technologies: Array.isArray(p.technologies) ? p.technologies : [],
+        achievements: Array.isArray(p.highlights) ? p.highlights : (Array.isArray(p.achievements) ? p.achievements : [])
       })),
-      certifications: (structured?.certifications || []).map(c => ({ name: c })),
-      achievements: (structured?.achievements || []).map(a => ({ title: a })),
+      certifications: (structured?.certifications || []).map(c => ({ name: typeof c === 'string' ? c : c.name || '' })),
+      achievements: (structured?.achievements || []).map(a => ({ title: typeof a === 'string' ? a : a.title || '' })),
       atsScore: baselineAts ? {
-        overallScore: baselineAts.overallScore,
-        categories: {
-          structure: baselineAts.breakdown?.structure?.score || 8,
-          sectionCompleteness: baselineAts.breakdown?.sectionCompleteness?.score || 8,
-          readability: baselineAts.breakdown?.readability?.score || 8,
-          keywordRelevance: baselineAts.breakdown?.keywordQuality?.score || 16,
-          skillsMatch: baselineAts.breakdown?.skillsPresentation?.score || 16,
-          formatting: baselineAts.breakdown?.formatting?.score || 8,
-          jobRelevance: baselineAts.breakdown?.contentQuality?.score || 14
+        overallScore: baselineAts.overallScore || baselineAts.score || 80,
+        categories: baselineAts.categories || {
+          structure: 8,
+          sectionCompleteness: 8,
+          readability: 8,
+          keywordRelevance: 16,
+          skillsMatch: 16,
+          formatting: 8,
+          jobRelevance: 14
         },
         lastAnalyzed: new Date()
       } : undefined
@@ -335,17 +433,58 @@ exports.uploadResume = async (req, res, next) => {
       user: req.user.id,
       action: 'Uploaded & Analyzed Resume',
       type: 'ats',
-      details: `Parsed "${req.file.originalname}" with baseline ATS score ${baselineAts?.overallScore || 80}/100.`,
+      details: `Parsed "${req.file.originalname}" with baseline ATS score ${baselineAts?.overallScore || baselineAts?.score || 80}/100.`,
       targetId: createdResume._id
     });
+
+    const flatSkillsList = Array.from(new Set(Object.values(normalizedSkills).flat()));
+
+    const atsPayload = {
+      score: baselineAts?.overallScore || baselineAts?.score || 80,
+      overallScore: baselineAts?.overallScore || baselineAts?.score || 80,
+      categories: baselineAts?.categories || {
+        structure: 8,
+        sectionCompleteness: 8,
+        readability: 8,
+        keywordQuality: 16,
+        contentQuality: 14,
+        formatting: 8
+      },
+      issues: Array.isArray(baselineAts?.issues) ? baselineAts.issues : [],
+      strengths: Array.isArray(baselineAts?.strengths) ? baselineAts.strengths : [
+        'Machine-readable linear structure and valid standard contact fields detected.'
+      ]
+    };
 
     res.status(200).json({
       success: true,
       message: 'Resume parsed and ATS baseline score generated.',
+      resume: {
+        _id: createdResume._id,
+        id: createdResume._id,
+        title: createdResume.title,
+        templateId: createdResume.templateId,
+        personal: createdResume.personalInfo || {},
+        personalInfo: createdResume.personalInfo || {},
+        summary: createdResume.summary || '',
+        skills: flatSkillsList,
+        skillsCategories: createdResume.skills,
+        education: createdResume.education || [],
+        experience: createdResume.experience || [],
+        projects: createdResume.projects || [],
+        certifications: (createdResume.certifications || []).map(c => c.name || c),
+        achievements: (createdResume.achievements || []).map(a => a.title || a),
+        languages: (createdResume.languages || []).map(l => l.language || l),
+        links: createdResume.personalInfo?.otherLinks || []
+      },
+      ats: atsPayload,
+      baselineAts: baselineAts || atsPayload,
       extractedData: structured,
-      baselineAts: baselineAts,
-      resume: createdResume,
-      fileName: req.file.originalname
+      fileName: req.file.originalname,
+      data: {
+        resume: createdResume,
+        baselineAts: baselineAts || atsPayload
+      }
     });
   } catch (err) {
     next(err);

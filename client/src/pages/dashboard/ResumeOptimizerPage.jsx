@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { ensureArray, normalizeMatchData } from '../../utils/normalizers';
 
 export default function ResumeOptimizerPage() {
   const [searchParams] = useSearchParams();
@@ -78,7 +79,7 @@ export default function ResumeOptimizerPage() {
         jobId: selectedJobId
       });
       if (res.data.success) {
-        setMatchingData(res.data.data);
+        setMatchingData(normalizeMatchData(res.data));
       }
     } catch (err) {
       console.error('Matching analysis failed:', err);
@@ -98,11 +99,16 @@ export default function ResumeOptimizerPage() {
         jobId: selectedJobId
       });
       if (res.data.success) {
-        setOptimizationPlan(res.data.data);
+        const plan = res.data.data || res.data;
+        const suggestions = ensureArray(plan.suggestions || plan.changes);
+        setOptimizationPlan({
+          ...plan,
+          suggestions
+        });
         // Initialize decisions as ACCEPTED by default for supported changes
         const initDecisions = {};
         const initTexts = {};
-        res.data.data.suggestions.forEach(s => {
+        suggestions.forEach(s => {
           initDecisions[s.id] = s.status === 'SUPPORTED' ? 'ACCEPTED' : 'PENDING';
           initTexts[s.id] = s.suggested;
         });

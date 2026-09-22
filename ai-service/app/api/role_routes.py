@@ -15,8 +15,30 @@ async def analyze_role(payload: Dict[str, Any]):
         raise HTTPException(status_code=400, detail="Please provide a job description.")
 
     analysis = analyze_job_description(str(role_title), str(description), str(company))
+
+    technical_skills = list(dict.fromkeys(
+        (analysis.get("programmingLanguages") or []) +
+        (analysis.get("frameworks") or []) +
+        (analysis.get("databases") or []) +
+        (analysis.get("cloudTechnologies") or []) +
+        (analysis.get("tools") or [])
+    ))
+
+    role_contract = {
+        "title": analysis.get("jobTitle") or str(role_title),
+        "requiredSkills": analysis.get("requiredSkills") or [],
+        "preferredSkills": analysis.get("preferredSkills") or [],
+        "technicalSkills": technical_skills,
+        "softSkills": analysis.get("softSkills") or [],
+        "responsibilities": analysis.get("responsibilities") or [],
+        "keywords": analysis.get("keywords") or [],
+        "education": analysis.get("education") or [],
+        "experience": analysis.get("experience") or []
+    }
+
     return {
         "success": True,
+        "role": role_contract,
         "data": analysis
     }
 

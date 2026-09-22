@@ -21,7 +21,28 @@ async def analyze_match(payload: Dict[str, Any]):
         }
 
     match_result = perform_resume_role_matching(resume, role_data)
+
+    matched_list = match_result.get("matchedSkills", [])
+    partial_list = match_result.get("partialSkills", [])
+    missing_list = match_result.get("missingSkills", [])
+    score = match_result.get("matchPercentage", 0)
+
+    recommendations = []
+    for p in partial_list[:3]:
+        recommendations.append(f"Strengthen evidence for '{p.get('name')}' by describing specific project outcomes.")
+    for m in missing_list[:3]:
+        recommendations.append(f"Target role requires '{m.get('name')}'. If you possess this experience, consider highlighting relevant projects.")
+
+    match_contract = {
+        "score": score,
+        "matched": matched_list,
+        "partial": partial_list,
+        "missing": missing_list,
+        "recommendations": recommendations
+    }
+
     return {
         "success": True,
+        "match": match_contract,
         "data": match_result
     }

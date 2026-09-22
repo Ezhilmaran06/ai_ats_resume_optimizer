@@ -5,7 +5,12 @@ const JobAnalysis = require('../models/JobAnalysis');
 const Activity = require('../models/Activity');
 const { matchResumeToJob } = require('../services/matching/matchingEngine');
 const { optimizeResumeForJob } = require('../services/ai/resumeOptimizer');
-const { analyzeKeywordsWithPython, analyzeMatchWithPython, getOptimizationPlanWithPython } = require('../services/ai/pythonAiClient');
+const {
+  analyzeKeywordsWithPython,
+  analyzeMatchWithPython,
+  optimizeResumeWithPython,
+  getOptimizationPlanWithPython
+} = require('../services/ai/pythonAiClient');
 
 // @desc    Match resume or profile against a job description
 // @route   POST /api/matching/analyze

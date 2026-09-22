@@ -14,23 +14,7 @@ COMMON_TECH_SKILLS = [
     # Tools & Concepts
     "git", "rest", "rest api", "restful", "graphql", "microservices", "agile", "scrum", "jira", "postman", "unit testing", "pytest", "jest", "oop", "system design", "jwt", "oauth"
 ]
-
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    reader = PdfReader(io.BytesIO(file_bytes))
-    text = []
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text.append(page_text)
-    return "\n".join(text)
-
-def extract_text_from_docx(file_bytes: bytes) -> str:
-    doc = docx.Document(io.BytesIO(file_bytes))
-    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
-    return "\n".join(paragraphs)
-
-def extract_text_from_txt(file_bytes: bytes) -> str:
-    return file_bytes.decode('utf-8', errors='ignore')
+from app.utils.normalizer import normalize_parsed_resume
 
 def extract_contact_info(text: str) -> Dict[str, Any]:
     email_match = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', text)
@@ -261,13 +245,9 @@ def parse_education_section(edu_text: str) -> List[Dict[str, Any]]:
     return entries
 
 def parse_resume_document(file_bytes: bytes, filename: str) -> Dict[str, Any]:
-    lower_name = filename.lower()
-    if lower_name.endswith('.pdf'):
-        raw_text = extract_text_from_pdf(file_bytes)
-    elif lower_name.endswith('.docx'):
-        raw_text = extract_text_from_docx(file_bytes)
-    else:
-        raw_text = extract_text_from_txt(file_bytes)
+    raw_text = extract_text(file_bytes, filename)
+    if not raw_text or not raw_text.strip():
+        raise ValueError("NO_TEXT_EXTRACTED: No readable text was found in this document. If this is a scanned document, please provide a text-searchable PDF, DOCX, or TXT file.")
 
     sections = detect_sections(raw_text)
     contact = extract_contact_info(sections.get("header", "") + "\n" + raw_text[:300])
@@ -280,20 +260,25 @@ def parse_resume_document(file_bytes: bytes, filename: str) -> Dict[str, Any]:
     if not summary and len(sections.get("header", "").split('\n')) > 3:
         summary = "\n".join(sections.get("header", "").split('\n')[2:])
 
+    raw_structured = {
+        "title": f"{contact['fullName']} Resume",
+        "templateId": "ats-classic",
+        "personalInfo": contact,
+        "links": contact.get("links", []),
+        "summary": summary,
+        "education": education,
+        "skills": skills,
+        "experience": experience,
+        "projects": projects,
+        "certifications": [c.strip() for c in sections.get("certifications", "").split('\n') if c.strip()],
+        "achievements": [a.strip() for a in sections.get("achievements", "").split('\n') if a.strip()],
+        "languages": [l.strip() for l in sections.get("languages", "").split('\n') if l.strip()]
+    }
+
+    normalized = normalize_parsed_resume(raw_structured)
+
     return {
         "rawText": raw_text,
-        "structured": {
-            "title": f"{contact['fullName']} Resume",
-            "templateId": "ats-classic",
-            "personalInfo": contact,
-            "links": contact.get("links", []),
-            "summary": summary,
-            "education": education,
-            "skills": skills,
-            "experience": experience,
-            "projects": projects,
-            "certifications": [c.strip() for c in sections.get("certifications", "").split('\n') if c.strip()],
-            "achievements": [a.strip() for a in sections.get("achievements", "").split('\n') if a.strip()],
-            "languages": [l.strip() for l in sections.get("languages", "").split('\n') if l.strip()]
-        }
+        "structured": raw_structured,
+        "resume": normalized
     }

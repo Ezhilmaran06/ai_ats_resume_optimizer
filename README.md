@@ -138,18 +138,21 @@ ai_ats_resume_optimizer/
 
 ### Prerequisites
 - Node.js v18+ (tested on Node v22.17.0)
-- npm v9+
+- Python 3.10+ (tested on Python 3.14.3) with pip
+- MongoDB (local service or MongoDB Atlas; automatic in-memory fallback enabled in dev)
 
 ### 1. Clone & Install Dependencies
 ```bash
 git clone https://github.com/Ezhilmaran06/ai_ats_resume_optimizer.git
 cd ai_ats_resume_optimizer
 
-# Install backend dependencies
-cd server && npm install
+# Install root dependencies
+npm run install:all
 
-# Install frontend dependencies
-cd ../client && npm install
+# Install Python microservice requirements
+cd ai-service
+pip install -r requirements.txt
+cd ..
 ```
 
 ### 2. Configure Environment Variables
@@ -164,28 +167,34 @@ cp .env.example server/.env
 | `CLIENT_URL` | Frontend URL for CORS and redirects | `http://localhost:5173` | Recommended |
 | `MONGODB_URI` | MongoDB connection string (local or Atlas) | `mongodb://localhost:27017/ai_ats_resume_optimizer` | Required in prod (in-memory fallback in dev) |
 | `JWT_SECRET` | Secret key for signing JSON Web Tokens | `your_jwt_secret_min_32_chars` | Required in prod |
-| `AI_SERVICE_URL` | Microservice URL for Python FastAPI ATS engine | `http://localhost:8000` | Optional (fallback to local engine) |
-| `AI_API_KEY` | External LLM API key (Google Gemini or OpenAI) | *(Your LLM API Key)* | Optional |
+| `AI_SERVICE_URL` | Microservice URL for Python FastAPI ATS engine | `http://localhost:8000` | Recommended (`http://localhost:8000`) |
+| `AI_API_KEY` | External LLM API key (Google Gemini or OpenAI) | *(Optional external key)* | Optional |
 | `AI_MODEL` | AI model identifier | `gemini-1.5-flash` | Optional |
 
-> **Security Note**: Never commit actual `.env` files or credentials to git. The application runs automatic environment validation on startup via `server/config/validateEnv.js`.
-
 ### 3. Run the Application
-In development, start the backend and frontend simultaneously:
 
-**Terminal 1 (Backend):**
+Start the 3 tiers in separate terminals:
+
+**Terminal 1 — Backend API Server (Express + MongoDB):**
 ```bash
 cd server
-npm start
+npm run dev
 ```
-*The server will start on `http://localhost:5000`. If local MongoDB is not running, it gracefully initializes an in-memory database automatically.*
+*Health Check: `http://localhost:5000/api/health`*
 
-**Terminal 2 (Frontend):**
+**Terminal 2 — AI / ATS Microservice (FastAPI + Python):**
+```bash
+python -m uvicorn app.main:app --app-dir ai-service --port 8000 --reload
+```
+*Health Check: `http://localhost:8000/api/ai/health`*
+
+**Terminal 3 — Frontend UI (React + Vite):**
 ```bash
 cd client
 npm run dev
 ```
-*The client will start on `http://localhost:5173` with full hot-reloading and proxying to port 5000.*
+*Client URL: `http://localhost:5173`*
+
 
 ---
 

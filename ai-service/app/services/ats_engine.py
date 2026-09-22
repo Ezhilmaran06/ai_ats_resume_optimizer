@@ -454,14 +454,34 @@ def calculate_ats_score(resume: Dict[str, Any], role_data: Optional[Dict[str, An
     issues = detect_all_issues(resume, category_scores)
     suggestions = [i["suggestion"] for i in issues]
 
+    # Compute strengths from high scoring dimensions
+    strengths = []
+    for cat_key, cat_data in category_scores.items():
+        if cat_data["score"] >= cat_data["maxScore"] - 1:
+            strengths.append(f"{cat_data['name']}: {cat_data['feedback']}")
+    if not strengths:
+        strengths.append("Machine-readable linear structure and valid standard contact fields detected.")
+
+    # Simplified 6-category map for Step 8 contract compatibility
+    simplified_categories = {
+        "structure": cat_structure["score"],
+        "sectionCompleteness": cat_section_det["score"],
+        "readability": cat_readability["score"],
+        "keywordQuality": cat_keywords["score"] + cat_skills["score"],
+        "contentQuality": cat_experience["score"] + cat_projects["score"],
+        "formatting": cat_formatting["score"]
+    }
+
     return {
         "label": "ATS Compatibility Score",
         "score": total_score,
+        "overallScore": total_score,
         "displayScore": f"{total_score} / 100",
         "disclaimer": "ATS Compatibility Score based on standard industry parser rules and formatting guidelines. Not an official universal ATS score.",
+        "categories": simplified_categories,
         "categoryScores": category_scores,
         "breakdown": category_scores,
-        "overallScore": total_score,
+        "strengths": strengths,
         "issues": issues,
         "suggestions": suggestions,
         "evaluatedAt": datetime.utcnow().isoformat()

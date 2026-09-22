@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadCloud, FileText, CheckCircle, AlertCircle, X, ShieldCheck } from 'lucide-react';
 import api from '../../services/api';
+import resumeApi from '../../services/resumeApi';
 import { useToast } from '../../context/ToastContext';
 
 export default function ResumeUploadModal({ isOpen, onClose, onSuccess }) {
@@ -109,9 +110,7 @@ export default function ResumeUploadModal({ isOpen, onClose, onSuccess }) {
         setProgress(85);
       }, 1100);
 
-      const response = await api.post('/resumes/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const uploadData = await resumeApi.uploadResume(formData);
 
       clearTimeout(readTimer);
       clearTimeout(extractTimer);
@@ -121,18 +120,17 @@ export default function ResumeUploadModal({ isOpen, onClose, onSuccess }) {
 
       addToast('Resume uploaded and extracted successfully!', 'success');
 
-      const resData = response.data;
-      const resumeId = resData?.resume?._id || resData?.data?.resume?._id || resData?.data?._id;
+      const resumeId = uploadData?.resume?._id || uploadData?.data?.resume?._id || uploadData?.data?._id;
 
       if (onSuccess) {
-        onSuccess(response.data);
+        onSuccess(uploadData);
       } else if (resumeId) {
         navigate(`/dashboard/ats?resumeId=${resumeId}`);
       }
 
       onClose();
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to upload and parse resume.';
+      const message = err.response?.data?.message || err.response?.data?.error?.message || err.message || 'Failed to upload and parse resume.';
       setError(message);
       addToast(message, 'error');
     } finally {
