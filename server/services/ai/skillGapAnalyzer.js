@@ -69,21 +69,53 @@ function analyzeSkillGaps(profileOrResume, jobAnalysis) {
   const verifiedSkills = getAllUserSkills(profileOrResume);
   const matchResult = matchResumeToJob(profileOrResume, jobAnalysis);
 
-  const missingSkills = matchResult.missingItems || [];
+  const matchedItems = matchResult.matchedItems || [];
+  const partialItems = matchResult.partialItems || [];
+  const missingItems = matchResult.missingItems || [];
+
+  // Structure Matched category
+  const matched = matchedItems.map(item => ({
+    name: item.name,
+    status: 'Matched',
+    matchType: item.matchType || 'Verified',
+    importance: item.importance || 'High',
+    category: item.category || 'Technical',
+    evidence: `Verified in candidate resume (${item.matchType || 'Exact'} match)`
+  }));
+
+  // Structure Partial category with recommendations
+  const partial = partialItems.map(item => ({
+    name: item.name,
+    status: 'Partial',
+    matchType: 'Partial / Related',
+    importance: item.importance || 'Medium',
+    category: item.category || 'Technical',
+    recommendation: `Strengthen mention of ${item.name} in your project bullets or experience descriptions to ensure automated ATS keyword credit.`
+  }));
+
+  // Structure Missing category with strict anti-fabrication recommendations
+  const missing = missingItems.map(item => {
+    const priority = item.priority || 'required';
+    return {
+      name: item.name,
+      status: 'Missing',
+      priority: item.priority || 'Required',
+      importance: item.importance || 'High',
+      category: item.category || 'Technical',
+      recommendation: `Consider learning ${item.name} because it is listed as a ${priority.toLowerCase()} technology in the supplied job description.`,
+      antiFabricationNotice: `Do not pretend the candidate has ${item.name} if they have not used it. Build a hands-on project before adding.`
+    };
+  });
 
   // Categorize based on strict job criteria
   const criticalGaps = [];
   const importantGaps = [];
   const niceToHaveGaps = [];
 
-  missingSkills.forEach(item => {
-    let classification = 'Nice to Have';
-
+  missing.forEach(item => {
     if (item.priority === 'Required' && item.importance === 'High') {
-      classification = 'Critical';
       criticalGaps.push(item);
     } else if (item.priority === 'Required' || item.importance === 'Medium') {
-      classification = 'Important';
       importantGaps.push(item);
     } else {
       niceToHaveGaps.push(item);
@@ -110,13 +142,25 @@ function analyzeSkillGaps(profileOrResume, jobAnalysis) {
       category: gapItem.category,
       priority: gapItem.priority,
       classification: gapItem.priority === 'Required' && gapItem.importance === 'High' ? 'Critical' : (gapItem.priority === 'Required' ? 'Important' : 'Nice to Have'),
+      recommendation: gapItem.recommendation,
       ...details
     });
   });
 
+  // All role requirements flattened
+  const roleRequirements = [
+    ...(jobAnalysis.requiredSkills || []).map(s => typeof s === 'string' ? { name: s, priority: 'Required' } : { name: s.name, priority: 'Required', importance: s.importance || 'High' }),
+    ...(jobAnalysis.preferredSkills || []).map(s => typeof s === 'string' ? { name: s, priority: 'Preferred' } : { name: s.name, priority: 'Preferred', importance: s.importance || 'Medium' })
+  ];
+
   return {
     verifiedCount: verifiedSkills.length,
-    missingCount: missingSkills.length,
+    missingCount: missingItems.length,
+    yourSkills: verifiedSkills,
+    roleRequirements,
+    matched,
+    partial,
+    missing,
     criticalGaps,
     importantGaps,
     niceToHaveGaps,
