@@ -4,7 +4,16 @@ const RequirementItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   category: {
     type: String,
-    enum: ['Programming Language', 'Framework', 'Database', 'Cloud', 'Tool', 'Soft Skill', 'Qualification', 'Experience', 'Other'],
+    enum: [
+      'Programming Language', 'Programming Languages',
+      'Framework', 'Frameworks',
+      'Database', 'Databases',
+      'Cloud', 'Cloud Technologies', 'Cloud & DevOps',
+      'Tool', 'Tools',
+      'Soft Skill', 'Soft Skills',
+      'Qualification', 'Qualifications',
+      'Experience', 'Technical', 'Other'
+    ],
     default: 'Other'
   },
   priority: {

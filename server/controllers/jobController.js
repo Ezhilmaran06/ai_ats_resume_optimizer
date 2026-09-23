@@ -102,12 +102,21 @@ exports.createAndAnalyzeJob = async (req, res, next) => {
         certifications: pyAnalysis.certifications || [],
         domainKeywords: pyAnalysis.keywords || [],
         actionVerbs: pyAnalysis.actionVerbs || [],
-        requirementsTable: (pyAnalysis.classifiedRequirements || []).map(r => ({
-          name: r.name,
-          category: r.category === 'Programming Languages' ? 'Programming Language' : (r.category || 'Other'),
-          priority: r.classification || 'Required',
-          importance: r.importance || 'High'
-        }))
+        requirementsTable: (pyAnalysis.classifiedRequirements || []).map(r => {
+          let cat = r.category || 'Other';
+          if (cat === 'Programming Languages') cat = 'Programming Language';
+          else if (cat === 'Frameworks') cat = 'Framework';
+          else if (cat === 'Databases') cat = 'Database';
+          else if (cat === 'Cloud Technologies') cat = 'Cloud';
+          else if (cat === 'Tools') cat = 'Tool';
+          else if (cat === 'Soft Skills') cat = 'Soft Skill';
+          return {
+            name: r.name,
+            category: cat,
+            priority: r.classification || 'Required',
+            importance: r.importance || 'High'
+          };
+        })
       };
     } catch (pyErr) {
       console.warn('[Job Controller] Python role analyzer error, using local fallback:', pyErr.message);

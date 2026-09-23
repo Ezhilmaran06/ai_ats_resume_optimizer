@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/analyze', analyzeMatching);
+router.post('/compare', analyzeMatching);
 router.post('/optimize', optimizeResume);
 router.post('/apply-suggestions', applySuggestions);
 

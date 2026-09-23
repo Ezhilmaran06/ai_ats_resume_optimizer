@@ -1,229 +1,292 @@
 # AI ATS Resume Optimizer
 
-> **Upload Resume → ATS Score → Analyze Role/Job Description → Match Resume with Role → AI Resume Editor → Improve ATS Score → Download Optimized Resume**
+[![Build & Tests](https://img.shields.io/badge/Build%20%26%20Tests-Passing-brightgreen.svg)]()
+[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-blue.svg)]()
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)]()
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111%2B-teal.svg)]()
+[![React](https://img.shields.io/badge/React-18-61dafb.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 
-AI ATS Resume Optimizer is an enterprise-grade platform designed to evaluate resumes against modern Applicant Tracking Systems (ATS), extract and parse job description requirements, match skills without hallucination or fabrication, edit resumes interactively in an A4 live editor, improve ATS scores, and export ATS-compliant resumes.
+> **"Analyze your resume. Match it to the role. Improve it. Measure the ATS compatibility."**
+
+An enterprise-grade platform engineered to simulate automated Applicant Tracking Systems (Workday, Greenhouse, Lever, Taleo), evaluate resume parseability and keyword coverage, compare candidate competencies against target job descriptions with strict anti-fabrication integrity, edit resumes live in an interactive A4 builder, recalculate ATS scores dynamically, manage tailored versions, and export compliant A4 PDF, Word DOCX, and TXT files.
 
 ---
 
 ## 🌟 Core Product Workflow
 
+The platform strictly executes this linear end-to-end workflow:
+
 ```text
 UPLOAD RESUME
      ↓
-ATS SCORE & DIAGNOSTIC
+GET ATS SCORE
      ↓
-ANALYZE ROLE / JOB DESCRIPTION
+SEE ISSUES
      ↓
-MATCH RESUME WITH ROLE (Skill & Keyword Alignment)
+ENTER ROLE / UPLOAD JOB DESCRIPTION
      ↓
-AI RESUME EDITOR (Live 3-Panel Interactive Editor)
+ANALYZE ROLE
      ↓
-IMPROVE ATS SCORE
+COMPARE RESUME WITH ROLE
      ↓
-DOWNLOAD OPTIMIZED RESUME (A4 PDF / DOCX / TXT)
+AI RESUME EDITOR
+     ↓
+ACCEPT / REJECT AI CHANGES
+     ↓
+ATS SCORE IMPROVES
+     ↓
+SAVE NEW VERSION
+     ↓
+DOWNLOAD FINAL RESUME (PDF / DOCX / TXT)
 ```
 
 ---
 
-## 🏗️ Project Architecture
+## 🏗️ Architecture & System Design
 
-The application is structured into three dedicated tiers:
-
-- **`client/`**: React 18 + Vite frontend with vanilla CSS design system and Lucide React icons.
-- **`server/`**: Node.js + Express backend providing authentication, database persistence, and application APIs.
-- **`ai-service/`**: Python + FastAPI microservice dedicated to ATS parsing, semantic extraction, and scoring algorithms.
+The application follows a resilient 3-tier microservice architecture:
 
 ```text
-ai_ats_resume_optimizer/
-├── client/          # Frontend application (React, Vite)
-├── server/          # Backend application API (Express, Mongoose)
-├── ai-service/      # AI/NLP Microservice (Python, FastAPI)
-├── .env.example     # Environment variables blueprint
-├── .gitignore       # Git ignore rules
-└── package.json     # Workspace management scripts
+                               ┌─────────────────────────────────────────┐
+                               │               CLIENT TIER               │
+                               │  React 18 + Vite (Vanilla Design System)│
+                               │  - 3-Panel Visual Resume Editor         │
+                               │  - Live A4 Canvas Preview (html2pdf.js) │
+                               │  - Anti-Fabrication Change Review       │
+                               │  - Real-time Debounced ATS Scoring      │
+                               └────────────────────┬────────────────────┘
+                                                    │ HTTP / JSON (REST)
+                                                    ▼
+                               ┌─────────────────────────────────────────┐
+                               │             APPLICATION TIER            │
+                               │        Node.js + Express.js API         │
+                               │  - JWT Authentication & RBAC            │
+                               │  - Multer PDF/DOCX/TXT Ingestion        │
+                               │  - Version Management & Diff Engine     │
+                               │  - A4 DOCX Document Generation          │
+                               └──────────┬───────────────────┬──────────┘
+                                          │                   │
+                     MongoDB Protocol     │                   │  HTTP (REST)
+                     (or Memory Fallback) │                   │  Port 8000
+                                          ▼                   ▼
+                 ┌─────────────────────────────────┐   ┌─────────────────────────────────┐
+                 │          DATA TIER              │   │         AI & NLP TIER           │
+                 │         MongoDB 6+              │   │       Python 3 + FastAPI        │
+                 │  - User Accounts                │   │  - Two-Layer ATS Scoring Engine │
+                 │  - Resumes (Master & Tailored)  │   │  - Semantic Synonym Clusters    │
+                 │  - Target Job Analyses          │   │  - Role Requirement Classifier  │
+                 │  - Version Diffs & Audits       │   │  - Anti-Fabrication Optimizer   │
+                 └─────────────────────────────────┘   └─────────────────────────────────┘
 ```
-
-### 🛡️ The Anti-Fabrication Guarantee
-Traditional AI resume generators often hallucinate skills, metrics, degrees, or companies you never worked at. **ResumeAI strictly forbids this.**
-* Every AI suggestion is tagged as `SUPPORTED`, `PARTIALLY_SUPPORTED`, or `UNSUPPORTED`.
-* If a target job requires **AWS** or **Kubernetes** and it is not present in the user's verified Master Profile, the system flags it as **`MISSING`**.
-* It **never** fabricates fake experience into the candidate's resume.
 
 ---
 
-## 🚀 Key Features
+## 🛡️ Anti-Fabrication Engine & Factual Integrity
 
-1. **Master Profile (Source of Truth)**: Centralized repository of verified personal details, professional summary, education, categorized technical skills, experience with achievements, projects, certifications, and languages.
-2. **Visual Resume Builder (3-Pane Live A4 Preview)**:
-   - Left: Content controls and section editors.
-   - Center: Live A4 sheet preview with zoom controls (0.5x - 1.3x), fit to screen, and print stylesheet.
-   - Right: Template switcher, typography font selector, page margins, and accent color.
-3. **6 Professional ATS-Safe Templates**:
-   - **ATS Classic**: Single-column strict hierarchy for legacy enterprise parsers (Workday, Taleo).
-   - **Modern Professional**: Balanced typography with subtle corporate divider lines.
-   - **Software Engineer**: Technical competencies and project repositories prioritized.
-   - **Fresh Graduate**: Academic accomplishments, degrees, and coursework emphasized.
-   - **Minimal**: High-contrast typography maximizing whitespace and scan readability.
-   - **Executive**: Strategic leadership summary and business impact metrics.
-4. **AI Job Description Analyzer**: Paste text or upload PDF/DOCX/TXT files to extract categorized requirements (`Required`, `Preferred`, `Optional`), action verbs, and domain keywords.
-5. **Transparent 7-Category ATS Scoring Engine**:
-   - Keyword Relevance (25%)
-   - Technical Skills Match (20%)
-   - Job Relevance (15%)
-   - Standard Structure (10%)
-   - Section Completeness (10%)
-   - Readability & Action Verbs (10%)
-   - Formatting & Parseability (10%)
-6. **Resume Version Manager & Diff**: Keep distinct versions for different companies without overwriting your master profile. Visually compare differences with the built-in diff viewer.
-7. **Skill Gap & Structured Learning Roadmaps**: Classifies missing capabilities (`Critical`, `Important`, `Nice to have`) and provides realistic learning roadmaps with prerequisites, topics, and practical projects.
-8. **Interview Preparation & Elevator Pitches**: Generates role-specific technical and behavioral questions grounded in your real projects, plus 30s, 60s, and 90s self-introduction elevator pitches.
-9. **Job Application Pipeline Tracker**: Kanban and list view to track statuses (`Saved`, `Applied`, `Online Assessment`, `Interview`, `Offer`, `Rejected`) alongside the exact resume used and ATS match score.
-10. **Multi-Format Export**: Download pixel-perfect A4 PDF, structured Word `.docx` documents, or plain `.txt` files.
+Traditional generative AI models hallucinate skills, metrics, degrees, or tools candidates never used. **AI ATS Resume Optimizer strictly prevents this**:
+
+1. **Zero Fake Experience**: If a target job requires **Docker**, **AWS**, or **Kubernetes** and those skills do not exist in the candidate's verified profile, the engine **never** injects them into the resume text.
+2. **Tri-State Skill Categorization**:
+   - `Matched`: Skill is verified and matched (exact or semantic synonym).
+   - `Partial`: Related competency or contextual foundation detected.
+   - `Missing`: Explicitly identified as missing. Labeled with: *"Consider learning [Skill] because it is required in the job description. Do NOT pretend to have this skill."*
+3. **Explicit AI Change Review**:
+   - Every modification is displayed as `Original:` vs `Suggested:`.
+   - Action controls: `Accept`, `Reject`, `Edit`, `Accept All`, `Reject All`.
+   - The master or draft resume is **never** overwritten automatically.
+
+---
+
+## 📊 ATS Scoring Methodology
+
+The ATS engine computes a deterministic, multi-dimensional **ATS Compatibility Score (0 - 100)**:
+
+| Category | Weight | Evaluation Criteria |
+| :--- | :---: | :--- |
+| **Keyword Match** | 20% | Frequency and density of role-specific required and preferred skills. |
+| **Structure** | 10% | Machine-readable linear layout, recognized headings (Summary, Experience, Education, Skills). |
+| **Readability** | 15% | High-impact action verbs (Engineered, Architected, Spearheaded), clean bullet points, absence of parsing blockers. |
+| **Completeness** | 15% | Presence of contact info, professional summary, dates, institutions, degrees, and measurable results. |
+| **Role Relevance**| 20% | Alignment between candidate achievements and target responsibilities. |
+| **Formatting** | 10% | Safe margin dimensions, standard fonts, absence of unsupported tables, multi-column blocks, or graphics. |
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React 18, Vite, JSX, Modular Vanilla CSS (Strictly no Tailwind, adhering to custom 8px spacing system and curated SaaS palette), Lucide React, Recharts.
-- **Backend**: Node.js, Express.js REST API, JWT Authentication, bcryptjs password hashing, Multer for file uploads, `docx` for Word document generation, `pdf-parse` & `mammoth` for document parsing.
-- **Database**: MongoDB & Mongoose. Includes zero-configuration `mongodb-memory-server` fallback for instantaneous local evaluation.
-- **AI Service Layer**: Pluggable AI engine compatible with Google Gemini API, OpenAI-compatible endpoints, or high-precision local deterministic heuristics for offline/demo use.
+- **Frontend**: React 18, Vite, Vanilla CSS design tokens (modular CSS modules, no Tailwind), Lucide React icons, Recharts, `html2pdf.js`.
+- **Backend API**: Node.js, Express.js, Mongoose, JWT (`jsonwebtoken`), `bcryptjs`, Multer, `docx`, `pdf-parse`, `mammoth`.
+- **AI Microservice**: Python 3.10+, FastAPI, Uvicorn, Pydantic, Regular Expressions, Semantic Synonym Dictionaries.
+- **Database**: MongoDB (supports local MongoDB, MongoDB Atlas, and automatic zero-configuration in-memory fallback for immediate testing).
 
 ---
 
-## 📂 Project Structure
+## ⚡ Setup & Installation
 
-```text
-ai_ats_resume_optimizer/
-├── client/
-│   ├── src/
-│   │   ├── components/
-│   │   │   └── resume/          # A4ResumeDocument & print styling
-│   │   ├── context/             # AuthContext & ToastContext
-│   │   ├── layouts/             # PublicLayout & DashboardLayout (11-item sidebar)
-│   │   ├── pages/
-│   │   │   ├── public/          # LandingPage, LoginPage, RegisterPage
-│   │   │   └── dashboard/       # Overview, Profile, Resumes, Builder, Analyzer, Optimizer, ATS, Skills, Applications, Interview, Settings
-│   │   ├── services/            # Axios API client with JWT interceptor
-│   │   ├── styles/              # variables.css (design tokens) & global.css
-│   │   ├── App.jsx              # Application router & protected routes
-│   │   └── main.jsx
-│   ├── package.json
-│   └── vite.config.js
-├── server/
-│   ├── config/                  # db.js (Dual-mode MongoDB) & atsConfig.js (Scoring Rubric)
-│   ├── controllers/             # auth, profile, resume, job, matching, ats, skills, interview, application, analytics
-│   ├── middleware/              # JWT auth, error handler, multer upload validation
-│   ├── models/                  # User, Profile, Resume, ResumeVersion, Job, JobAnalysis, Application, Activity
-│   ├── routes/                  # Express REST routes
-│   ├── services/
-│   │   ├── ai/                  # aiClient, jobAnalyzer, resumeOptimizer, atsAnalyzer, interviewGenerator, skillGapAnalyzer
-│   │   ├── export/              # docxExporter (ATS Word generation)
-│   │   ├── matching/            # semantic synonym & requirement matching engine
-│   │   └── parser/              # pdf-parse & mammoth document reader
-│   ├── test/                    # e2eTest.js automated test suite
-│   ├── app.js                   # Express application setup & static client hosting
-│   ├── server.js                # Server entry point
-│   └── package.json
-├── package.json                 # Root orchestration scripts
-├── .env.example
-├── .gitignore
-└── README.md
+### Prerequisites
+- **Node.js**: v18.0.0 or higher (v20+ recommended)
+- **Python**: v3.10 or higher
+- **MongoDB**: Local MongoDB instance or free MongoDB Atlas URI (or automated in-memory mode)
+
+---
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Ezhilmaran06/ai_ats_resume_optimizer.git
+cd ai_ats_resume_optimizer
 ```
 
 ---
 
-## ⚡ Quick Start & Installation
+### Step 2: Configure Environment Variables
 
-### Prerequisites
-- Node.js v18+ (tested on Node v22.17.0)
-- Python 3.10+ (tested on Python 3.14.3) with pip
-- MongoDB (local service or MongoDB Atlas; automatic in-memory fallback enabled in dev)
-
-### 1. Clone & Install Dependencies
+Create `.env` inside `server/` (or copy `.env.example`):
 ```bash
-git clone https://github.com/Ezhilmaran06/ai_ats_resume_optimizer.git
-cd ai_ats_resume_optimizer
+cp .env.example server/.env
+```
 
-# Install root dependencies
+#### Environment Variables Reference
+```env
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+
+# Database Configuration
+# Leave blank or use local mongodb://localhost:27017/ai_ats_resume_optimizer
+# In-memory MongoDB is automatically used if no external instance is running
+MONGODB_URI=mongodb://localhost:27017/ai_ats_resume_optimizer
+
+# Authentication
+JWT_SECRET=ats_resume_optimizer_secret_key_2026_super_secure
+
+# AI Microservice URL
+AI_SERVICE_URL=http://localhost:8000
+
+# Optional External AI API Key (Google Gemini or OpenAI)
+AI_API_KEY=
+AI_MODEL=gemini-1.5-flash
+```
+
+---
+
+### Step 3: Install Dependencies
+
+#### Install Node backend & client dependencies:
+```bash
 npm run install:all
+```
 
-# Install Python microservice requirements
+#### Install Python AI microservice dependencies:
+```bash
 cd ai-service
 pip install -r requirements.txt
 cd ..
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `server/.env`:
+---
+
+### Step 4: Run the Services
+
+Start each service in a separate terminal:
+
+#### Terminal 1 — Python FastAPI AI Service:
 ```bash
-cp .env.example server/.env
+cd ai-service
+python -m uvicorn app.main:app --port 8000 --reload
 ```
+*Health Check: `http://localhost:8000/health` or `http://localhost:8000/api/ai/health`*
 
-| Variable | Description | Default / Example | Required |
-| :--- | :--- | :--- | :--- |
-| `PORT` | Port number for Express API server | `5000` | Optional (default 5000) |
-| `CLIENT_URL` | Frontend URL for CORS and redirects | `http://localhost:5173` | Recommended |
-| `MONGODB_URI` | MongoDB connection string (local or Atlas) | `mongodb://localhost:27017/ai_ats_resume_optimizer` | Required in prod (in-memory fallback in dev) |
-| `JWT_SECRET` | Secret key for signing JSON Web Tokens | `your_jwt_secret_min_32_chars` | Required in prod |
-| `AI_SERVICE_URL` | Microservice URL for Python FastAPI ATS engine | `http://localhost:8000` | Recommended (`http://localhost:8000`) |
-| `AI_API_KEY` | External LLM API key (Google Gemini or OpenAI) | *(Optional external key)* | Optional |
-| `AI_MODEL` | AI model identifier | `gemini-1.5-flash` | Optional |
-
-### 3. Run the Application
-
-Start the 3 tiers in separate terminals:
-
-**Terminal 1 — Backend API Server (Express + MongoDB):**
+#### Terminal 2 — Node.js Express Backend:
 ```bash
 cd server
 npm run dev
 ```
 *Health Check: `http://localhost:5000/api/health`*
 
-**Terminal 2 — AI / ATS Microservice (FastAPI + Python):**
-```bash
-python -m uvicorn app.main:app --app-dir ai-service --port 8000 --reload
-```
-*Health Check: `http://localhost:8000/api/ai/health`*
-
-**Terminal 3 — Frontend UI (React + Vite):**
+#### Terminal 3 — React Vite Client:
 ```bash
 cd client
 npm run dev
 ```
-*Client URL: `http://localhost:5173`*
-
+*App URL: `http://localhost:5173`*
 
 ---
 
-## 🧪 Testing the Complete Flow
+## 📚 API Documentation
 
-1. Open `http://localhost:5173`.
-2. On the **Login** page, click the **"Sign in as Demo User (1-Click)"** button.
-3. In **My Profile**, inspect or customize verified experiences and skills, or click **"Load Sample Profile"**.
-4. Navigate to **Job Analyzer** and click **"Load Sample Cloud Engineer JD"** to run instant requirement extraction.
-5. Head to **Resume Optimizer**: observe the calculated match percentage and generated suggestions tagged with Anti-Fabrication badges (`SUPPORTED`).
-6. Click **"Accept All Supported"** and **"Apply Accepted Changes"**.
-7. In **ATS Analyzer**, review the 7-category gauge score and actionable recommendations.
-8. Explore **Skill Gap** for step-by-step learning roadmaps and **Interview Prep** for 30s/60s/90s pitches.
-9. In **Resume Builder**, customize fonts, margins, or export as **PDF**, **DOCX**, or **TXT**.
+### Authentication (`/api/auth`)
+- `POST /api/auth/register` — Register a new candidate account.
+- `POST /api/auth/login` — Login and receive JWT access token.
+- `GET /api/auth/me` — Retrieve authenticated user profile.
 
-### Running Automated E2E Tests
-To run the automated backend test suite covering all 10 core modules:
+### Resumes (`/api/resumes`)
+- `GET /api/resumes` — List all user resumes (master and job-specific copies).
+- `POST /api/resumes` — Create a new structured resume.
+- `POST /api/resumes/upload` — Upload PDF/DOCX/TXT resume, extract text, parse sections, and generate baseline ATS score.
+- `GET /api/resumes/:id` — Retrieve full resume data and ATS rubric score.
+- `PUT /api/resumes/:id` — Update resume content and formatting.
+- `POST /api/resumes/:id/recalculate` — Recalculate live ATS score with debounced draft payload.
+- `POST /api/resumes/:id/duplicate` — Duplicate resume into a dedicated job-specific copy.
+- `PUT /api/resumes/:id/rename` — Rename a resume version.
+- `DELETE /api/resumes/:id` — Delete a resume version (Master Resume is protected).
+- `GET /api/resumes/:id/compare` — Compute Before/After diff vs Master Resume.
+- `GET /api/resumes/:id/export/docx` — Export ATS-compliant A4 Word document.
+- `GET /api/resumes/:id/export/txt` — Export ATS plain text file.
+
+### Target Jobs (`/api/jobs`)
+- `GET /api/jobs` — List analyzed job descriptions.
+- `POST /api/jobs` — Analyze pasted JD or uploaded file and extract classified requirements table.
+- `DELETE /api/jobs/:id` — Remove an analyzed job posting.
+
+### Matching & AI Optimizer (`/api/matching`)
+- `POST /api/matching/compare` — Compare resume against job description; return matched, partial, and missing skills.
+- `POST /api/matching/optimize` — Generate anti-fabrication improvement plan.
+- `POST /api/matching/apply-suggestions` — Apply reviewed and accepted AI changes to resume draft.
+
+### Python AI Engine (`http://localhost:8000`)
+- `GET /health` — Service health check.
+- `POST /api/ai/parse-resume` — Document text parsing and section segmentation.
+- `POST /api/ai/calculate-ats-score` — Deterministic 6-category ATS score calculation.
+- `POST /api/ai/analyze-job-role` — Extract technical stack, seniority, and responsibilities.
+- `POST /api/ai/match-role` — Semantic requirement matching and anti-fabrication checks.
+- `POST /api/ai/optimize-resume` — Factual bullet point refinement and skill alignment.
+
+---
+
+## 🧪 Verification & Automated Testing
+
+### 1. Run Complete 17-Step End-to-End Workflow Test
+Tests the complete core product workflow (registration, upload, ATS scoring, role analysis, semantic matching, AI review, live recalculation, version duplicate, and export):
+```bash
+node server/test/finalIntegrationTest.js
+```
+
+### 2. Run Backend E2E Test Suite
 ```bash
 node server/test/e2eTest.js
+```
+
+### 3. Run Python AI Service Unit Tests
+```bash
+python ai-service/test_ai_service.py
+```
+
+### 4. Build Frontend for Production
+```bash
+npm --prefix client run build
 ```
 
 ---
 
 ## 🔒 Security & Privacy
-- Zero client-side storage of confidential LLM keys.
-- Input validation on all endpoints with sanitized file parsing.
-- Password encryption with standard bcrypt salt rounds.
-- Stateless JSON Web Tokens (JWT) for authenticated requests.
-- Machine-parseable ATS exports free from hidden tracking pixels or metadata leakage.
+
+- **Stateless Authentication**: Passwords hashed with `bcryptjs` (salt rounds: 10).
+- **Protected Endpoints**: JWT authentication with bearer header and secure query token support for binary downloads.
+- **Master Resume Protection**: Source-of-truth master resume is protected from accidental deletion.
+- **Anti-Fabrication Guard**: AI suggestion engine rejects prompts that fabricate unverified skills.
+- **Clean Document Generation**: Exported PDF, DOCX, and TXT files contain clean layout markup without tracking scripts.
 
 ---
 

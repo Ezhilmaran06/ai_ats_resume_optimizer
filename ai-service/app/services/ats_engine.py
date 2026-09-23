@@ -12,6 +12,7 @@ Call this result: ATS Compatibility Score.
 import re
 import hashlib
 import json
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -809,7 +810,7 @@ def calculate_ats_score(
         "topImprovements": top_5_improvements,
         "suggestions": [i["suggestion"] for i in top_5_improvements],
         "careerStage": detect_career_stage(resume),
-        "evaluatedAt": datetime.utcnow().isoformat()
+        "evaluatedAt": datetime.now(timezone.utc).isoformat()
     }
 
     # Store in cache

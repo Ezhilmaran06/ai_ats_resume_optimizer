@@ -29,6 +29,8 @@ app.include_router(role_router)
 app.include_router(optimizer_router)
 app.include_router(match_router)
 
+@app.get("/")
+@app.get("/health")
 @app.get("/api/ai/health")
 async def health_check():
     return {

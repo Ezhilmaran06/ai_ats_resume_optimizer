@@ -66,6 +66,9 @@ exports.analyzeMatching = async (req, res, next) => {
         missingSkills: pyMatchResults.missingSkills || [],
         explanations: pyMatchResults.explanations || {},
         summary: {
+          matchScore: pyMatchResults.matchPercentage,
+          matchPercentage: pyMatchResults.matchPercentage,
+          keywordMatchPercentage: pyMatchResults.matchPercentage,
           matchedCount: pyMatchResults.matchedSkills?.length || pyKwResults.matchedCount,
           partialCount: pyMatchResults.partialSkills?.length || pyKwResults.partialCount,
           missingCount: pyMatchResults.missingSkills?.length || pyKwResults.missingCount,
