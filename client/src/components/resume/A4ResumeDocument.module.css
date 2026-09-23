@@ -161,3 +161,42 @@
   color: #334155;
   flex: 1;
 }
+
+/* Page break and pagination rules for PDF / Print export */
+.itemBlock {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.sectionTitle {
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+.skillRow {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  body {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .a4Sheet {
+    width: 100% !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+}
+

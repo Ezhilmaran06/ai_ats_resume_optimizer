@@ -36,6 +36,7 @@ import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import A4ResumeDocument from '../../components/resume/A4ResumeDocument';
 import AIChangeReview from '../../components/resume/AIChangeReview';
+import html2pdf from 'html2pdf.js';
 import styles from './ResumeBuilderPage.module.css';
 
 export default function ResumeBuilderPage() {
@@ -353,21 +354,81 @@ export default function ResumeBuilderPage() {
     addToast('Rejected all suggestions. Original resume remains unchanged.', 'info');
   };
 
-  const handleExportDocx = () => {
+  const handleDownloadPdf = async () => {
     if (!resume) return;
-    window.open(`/api/resumes/${resume._id}/export/docx`, '_blank');
-    addToast('Downloading ATS DOCX file...', 'info');
+    const element = document.getElementById('resume-a4-document');
+    if (!element) {
+      window.print();
+      return;
+    }
+    try {
+      addToast('Generating ATS A4 PDF export...', 'info');
+      const filename = `${(resume.title || 'ATS_Resume').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+      const opt = {
+        margin: [10, 10, 10, 10], // standard 10mm A4 margins
+        filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+      await html2pdf().set(opt).from(element).save();
+      addToast('PDF downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('PDF export error:', err);
+      window.print();
+    }
   };
 
-  const handleExportTxt = () => {
+  const handleExportDocx = async () => {
     if (!resume) return;
-    window.open(`/api/resumes/${resume._id}/export/txt`, '_blank');
-    addToast('Downloading plain TXT resume...', 'info');
+    try {
+      addToast('Preparing ATS DOCX file for download...', 'info');
+      const res = await api.get(`/resumes/${resume._id}/export/docx`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${(resume.title || 'ATS_Resume').replace(/[^a-zA-Z0-9_-]/g, '_')}_ATS_Resume.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      addToast('DOCX downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('DOCX export error:', err);
+      addToast('Failed to download DOCX file.', 'error');
+    }
   };
 
-  const handlePrintPdf = () => {
-    window.print();
+  const handleExportTxt = async () => {
+    if (!resume) return;
+    try {
+      addToast('Preparing plain TXT resume for download...', 'info');
+      const res = await api.get(`/resumes/${resume._id}/export/txt`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], {
+        type: 'text/plain;charset=utf-8'
+      }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${(resume.title || 'ATS_Resume').replace(/[^a-zA-Z0-9_-]/g, '_')}_ATS_Resume.txt`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      addToast('TXT downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('TXT export error:', err);
+      addToast('Failed to download TXT file.', 'error');
+    }
   };
+
+  const handlePrintPdf = handleDownloadPdf;
 
   const defaultSections = ['summary', 'skills', 'experience', 'projects', 'education', 'certifications', 'achievements'];
 
@@ -543,18 +604,18 @@ export default function ResumeBuilderPage() {
             <span>{saving ? 'Saving...' : 'Save Changes'}</span>
           </button>
 
-          <div style={{ display: 'flex', gap: '4px', borderLeft: '1px solid #CBD5E1', paddingLeft: '8px' }}>
-            <button onClick={handlePrintPdf} className="btn btn-secondary btn-sm" title="Print or Save as PDF">
+          <div style={{ display: 'flex', gap: '6px', borderLeft: '1px solid #CBD5E1', paddingLeft: '8px', flexWrap: 'wrap' }}>
+            <button onClick={handleDownloadPdf} className="btn btn-secondary btn-sm" title="Download ATS A4 PDF">
               <Printer size={14} />
-              <span>PDF</span>
+              <span>Download PDF</span>
             </button>
-            <button onClick={handleExportDocx} className="btn btn-secondary btn-sm" title="Download ATS DOCX">
+            <button onClick={handleExportDocx} className="btn btn-secondary btn-sm" title="Download ATS Word DOCX">
               <FileDown size={14} />
-              <span>DOCX</span>
+              <span>Download DOCX</span>
             </button>
-            <button onClick={handleExportTxt} className="btn btn-secondary btn-sm" title="Download Plain Text">
+            <button onClick={handleExportTxt} className="btn btn-secondary btn-sm" title="Download ATS Plain Text">
               <FileText size={14} />
-              <span>TXT</span>
+              <span>Download TXT</span>
             </button>
           </div>
         </div>

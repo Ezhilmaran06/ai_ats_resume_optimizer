@@ -152,6 +152,50 @@ export default function ResumeManagerPage() {
     }
   };
 
+  const handleDownloadDocx = async (resumeId, title) => {
+    try {
+      addToast('Preparing ATS DOCX file for download...', 'info');
+      const res = await api.get(`/resumes/${resumeId}/export/docx`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${(title || 'ATS_Resume').replace(/[^a-zA-Z0-9_-]/g, '_')}_ATS_Resume.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      addToast('DOCX downloaded successfully!', 'success');
+    } catch (err) {
+      addToast('Failed to download DOCX file.', 'error');
+    }
+  };
+
+  const handleDownloadTxt = async (resumeId, title) => {
+    try {
+      addToast('Preparing plain TXT resume for download...', 'info');
+      const res = await api.get(`/resumes/${resumeId}/export/txt`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], {
+        type: 'text/plain;charset=utf-8'
+      }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${(title || 'ATS_Resume').replace(/[^a-zA-Z0-9_-]/g, '_')}_ATS_Resume.txt`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      addToast('TXT downloaded successfully!', 'success');
+    } catch (err) {
+      addToast('Failed to download TXT file.', 'error');
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
@@ -275,6 +319,20 @@ export default function ResumeManagerPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    onClick={() => handleDownloadDocx(r._id, r.title)}
+                    className="btn btn-secondary btn-sm"
+                    title="Download ATS DOCX"
+                  >
+                    <Download size={13} /> DOCX
+                  </button>
+                  <button
+                    onClick={() => handleDownloadTxt(r._id, r.title)}
+                    className="btn btn-secondary btn-sm"
+                    title="Download Plain TXT"
+                  >
+                    <FileText size={13} /> TXT
+                  </button>
                   <button
                     onClick={() => handleDuplicate(r._id)}
                     className="btn btn-secondary btn-sm"

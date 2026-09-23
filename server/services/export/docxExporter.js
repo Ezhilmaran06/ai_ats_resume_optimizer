@@ -196,7 +196,20 @@ async function generateDocxBuffer(resume) {
 
   const doc = new Document({
     sections: [{
-      properties: {},
+      properties: {
+        page: {
+          size: {
+            width: 11906, // A4 width in dxa (210mm)
+            height: 16838 // A4 height in dxa (297mm)
+          },
+          margin: {
+            top: 720,
+            right: 720,
+            bottom: 720,
+            left: 720
+          }
+        }
+      },
       children
     }]
   });
