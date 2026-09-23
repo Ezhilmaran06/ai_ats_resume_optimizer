@@ -18,6 +18,7 @@ import {
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { ensureArray, normalizeMatchData } from '../../utils/normalizers';
+import AIChangeReview from '../../components/resume/AIChangeReview';
 
 export default function ResumeOptimizerPage() {
   const [searchParams] = useSearchParams();
@@ -760,142 +761,58 @@ export default function ResumeOptimizerPage() {
         </div>
       )}
 
-      {/* AI SUGGESTIONS REVIEW LIST (Commit 24 Validation Layer) */}
+      {/* AI CHANGE REVIEW INTERFACE (Commit 25) */}
       {optimizationPlan && (
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>AI Suggested Enhancements</h3>
-                <span className="badge badge-success" style={{ fontSize: '11px' }}>Fact Validated</span>
-              </div>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                Classified into <strong>SUPPORTED</strong> (can suggest), <strong>PARTIALLY SUPPORTED</strong> (requires confirmation), and <strong>UNSUPPORTED</strong> (never added).
-              </p>
+          <AIChangeReview
+            title="AI Change Review & Enhancements"
+            subtitle="Review every proposed AI modification. Compare Original vs Suggested, edit wording if desired, and accept or reject individually or in batch. The original resume is never overwritten automatically."
+            suggestions={optimizationPlan.suggestions}
+            decisions={decisions}
+            editedTexts={editedTexts}
+            onAccept={(id, text) => {
+              const sug = optimizationPlan.suggestions.find(s => s.id === id);
+              if (sug?.status === 'UNSUPPORTED') {
+                addToast('Anti-fabrication rule: Cannot automatically add unsupported skills.', 'warning');
+                return;
+              }
+              setDecisions(prev => ({ ...prev, [id]: 'ACCEPTED' }));
+              if (text) setEditedTexts(prev => ({ ...prev, [id]: text }));
+              addToast('Marked as accepted.', 'info');
+            }}
+            onReject={(id) => {
+              setDecisions(prev => ({ ...prev, [id]: 'REJECTED' }));
+              addToast('Marked as rejected. Original text preserved.', 'info');
+            }}
+            onEdit={(id, newText) => {
+              setEditedTexts(prev => ({ ...prev, [id]: newText }));
+              addToast('Edited suggestion saved.', 'success');
+            }}
+            onAcceptAll={handleAcceptAll}
+            onRejectAll={handleRejectAll}
+          />
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--border-color)',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Ready to apply your reviewed modifications? Only accepted changes will be applied to your resume draft.
             </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={handleAcceptAll} className="btn btn-secondary btn-sm">
-                Accept All Supported ({optimizationPlan.supportedCount || 0})
-              </button>
-              <button onClick={handleRejectAll} className="btn btn-secondary btn-sm">
-                Reject All
-              </button>
-              <button onClick={handleApplyChanges} disabled={applying} className="btn btn-primary">
-                {applying ? 'Applying Changes...' : 'Apply Accepted Changes'}
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Suggestions List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {optimizationPlan.suggestions.map((item) => {
-              const currentDecision = decisions[item.id] || 'PENDING';
-              const isEditing = editingId === item.id;
-              const isSupported = item.status === 'SUPPORTED';
-              const isPartially = item.status === 'PARTIALLY_SUPPORTED' || item.status === 'PARTIALLY SUPPORTED';
-              const isUnsupported = item.status === 'UNSUPPORTED';
-
-              const borderAccent = isSupported ? 'var(--success)' : (isPartially ? '#D97706' : 'var(--danger)');
-              const badgeType = isSupported ? 'badge-success' : (isPartially ? 'badge-warning' : 'badge-danger');
-              const labelText = isSupported ? 'SUPPORTED • Can be suggested' : (isPartially ? 'PARTIALLY SUPPORTED • Requires confirmation' : 'UNSUPPORTED • Never automatically add');
-
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    padding: '16px',
-                    border: '1px solid var(--border-color)',
-                    borderLeft: `4px solid ${borderAccent}`,
-                    borderRadius: '8px',
-                    backgroundColor: currentDecision === 'REJECTED' ? '#F8FAFC' : '#FFFFFF',
-                    opacity: currentDecision === 'REJECTED' ? 0.6 : 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                        {item.title}
-                      </span>
-                      <span className={`badge ${badgeType}`}>
-                        {labelText}
-                      </span>
-                    </div>
-
-                    {/* Decision Action Buttons */}
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => {
-                          if (isUnsupported) {
-                            addToast('Anti-fabrication rule: Cannot automatically add unsupported skills.', 'warning');
-                            return;
-                          }
-                          setDecisions({ ...decisions, [item.id]: 'ACCEPTED' });
-                        }}
-                        disabled={isUnsupported}
-                        className={`btn btn-sm ${currentDecision === 'ACCEPTED' ? 'btn-primary' : 'btn-secondary'}`}
-                        title={isUnsupported ? 'Unsupported suggestions cannot be automatically accepted' : 'Accept suggestion'}
-                      >
-                        <Check size={14} /> Accept
-                      </button>
-                      <button
-                        onClick={() => setDecisions({ ...decisions, [item.id]: 'REJECTED' })}
-                        className={`btn btn-sm ${currentDecision === 'REJECTED' ? 'btn-danger' : 'btn-secondary'}`}
-                      >
-                        <X size={14} /> Reject
-                      </button>
-                      {!isUnsupported && (
-                        <button
-                          onClick={() => setEditingId(isEditing ? null : item.id)}
-                          className="btn btn-secondary btn-sm"
-                        >
-                          <Edit2 size={14} /> {isEditing ? 'Done' : 'Edit'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Explainable AI Reason */}
-                  <div style={{ fontSize: '12.5px', color: 'var(--primary)', backgroundColor: 'var(--primary-light)', padding: '6px 10px', borderRadius: '4px' }}>
-                    <strong>Why:</strong> {item.reason}
-                  </div>
-
-                  {/* Original vs Suggested */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div style={{ padding: '10px', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                      <div style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                        ORIGINAL
-                      </div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                        {item.original || '(Empty / Not specified)'}
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '10px', backgroundColor: '#ECFDF5', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
-                      <div style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--success)', marginBottom: '4px' }}>
-                        SUGGESTED ENHANCEMENT
-                      </div>
-                      {isEditing ? (
-                        <textarea
-                          className="form-textarea"
-                          style={{ fontSize: '13px' }}
-                          value={editedTexts[item.id] || ''}
-                          onChange={(e) => setEditedTexts({ ...editedTexts, [item.id]: e.target.value })}
-                        />
-                      ) : (
-                        <div style={{ fontSize: '13px', color: '#065F46', lineHeight: '1.5', fontWeight: 500 }}>
-                          {editedTexts[item.id] || item.suggested}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <button
+              onClick={handleApplyChanges}
+              disabled={applying || Object.values(decisions).filter(d => d === 'ACCEPTED').length === 0}
+              className="btn btn-primary"
+              style={{ gap: '8px', padding: '10px 20px', fontWeight: 700 }}
+            >
+              <span>{applying ? 'Applying Changes...' : `Apply Accepted Changes (${Object.values(decisions).filter(d => d === 'ACCEPTED').length})`}</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}

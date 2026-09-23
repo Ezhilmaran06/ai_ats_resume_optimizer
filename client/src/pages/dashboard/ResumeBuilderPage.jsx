@@ -35,6 +35,7 @@ import {
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import A4ResumeDocument from '../../components/resume/A4ResumeDocument';
+import AIChangeReview from '../../components/resume/AIChangeReview';
 import styles from './ResumeBuilderPage.module.css';
 
 export default function ResumeBuilderPage() {
@@ -61,8 +62,8 @@ export default function ResumeBuilderPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [keywords, setKeywords] = useState([]);
   const [activeTab, setActiveTab] = useState('suggestions'); // 'suggestions' | 'keywords' | 'formatting'
-  const [editingSuggestionId, setEditingSuggestionId] = useState(null);
-  const [editedSuggestionText, setEditedSuggestionText] = useState('');
+  const [decisions, setDecisions] = useState({});
+  const [editedTexts, setEditedTexts] = useState({});
 
   useEffect(() => {
     fetchOrCreateResume();
@@ -114,14 +115,14 @@ export default function ResumeBuilderPage() {
 
   const generateLiveSuggestions = (resData) => {
     const targetRole = resData.targetRole || 'Software Engineer';
-    const hasSummary = !!resData.summary;
 
-    const dummySuggestions = [
+    const liveSuggestions = [
       {
         id: 'sug-sum-1',
         section: 'summary',
         title: 'Target Professional Summary for Role',
-        current: resData.summary || 'Aspiring engineer.',
+        original: resData.summary || 'Aspiring software developer with academic programming coursework.',
+        current: resData.summary || 'Aspiring software developer with academic programming coursework.',
         suggested: `Results-driven ${targetRole} experienced in full-stack architecture, automated CI/CD workflows, and scalable API development. Proven record of optimizing performance metrics and shipping maintainable code.`,
         explanation: `Explicitly references '${targetRole}' and incorporates verified engineering competencies for ATS keyword scanners.`,
         status: 'SUPPORTED',
@@ -131,7 +132,8 @@ export default function ResumeBuilderPage() {
         id: 'sug-skill-1',
         section: 'skills',
         title: 'Prioritize Target Role Skills',
-        current: 'Mixed skills list',
+        original: 'Unsorted technical skills: HTML, CSS, JavaScript, Python, Git',
+        current: 'Unsorted technical skills: HTML, CSS, JavaScript, Python, Git',
         suggested: 'Reorder verified competencies so primary frameworks (e.g. React, Node.js, Python, SQL) appear in the first line of skills.',
         explanation: 'ATS parsers weigh early keywords higher during section extraction.',
         status: 'SUPPORTED',
@@ -141,13 +143,21 @@ export default function ResumeBuilderPage() {
         id: 'warn-cloud-1',
         section: 'skills',
         title: 'Missing Required Role Keyword: AWS',
-        current: 'Not found in verified profile.',
+        original: 'AWS cloud architecture not listed in candidate profile.',
+        current: 'AWS cloud architecture not listed in candidate profile.',
         suggested: `Target role requires AWS cloud experience, but AWS is not in your verified profile. Anti-fabrication engine cannot auto-inject unverified skills.`,
         explanation: 'Strict Anti-Fabrication Rule: Unverified technical claims are never fabricated.',
         status: 'UNSUPPORTED',
         rule: 'Strict Anti-Fabrication'
       }
     ];
+
+    const initDecisions = {};
+    const initTexts = {};
+    liveSuggestions.forEach(s => {
+      initDecisions[s.id] = 'PENDING';
+      initTexts[s.id] = s.suggested;
+    });
 
     const dummyKeywords = [
       { keyword: 'Java', status: 'MATCHED', importance: 'High' },
@@ -159,7 +169,9 @@ export default function ResumeBuilderPage() {
       { keyword: 'Kubernetes', status: 'MISSING', importance: 'Medium' }
     ];
 
-    setSuggestions(dummySuggestions);
+    setSuggestions(liveSuggestions);
+    setDecisions(initDecisions);
+    setEditedTexts(initTexts);
     setKeywords(dummyKeywords);
   };
 
@@ -207,28 +219,67 @@ export default function ResumeBuilderPage() {
     }
   };
 
-  const handleApplySuggestion = (sug) => {
+  const handleAcceptSuggestion = (sugId, customizedText) => {
+    const sug = suggestions.find(s => s.id === sugId);
+    if (!sug) return;
     if (sug.status === 'UNSUPPORTED') {
       addToast('Cannot auto-apply unsupported skills. Please verify or add manually.', 'warning');
       return;
     }
 
-    const appliedText = editingSuggestionId === sug.id ? editedSuggestionText : sug.suggested;
+    const appliedText = customizedText || editedTexts[sugId] || sug.suggested;
 
     if (sug.section === 'summary') {
       setResume(prev => ({ ...prev, summary: appliedText }));
     }
 
-    // Bump score reactively
+    setDecisions(prev => ({ ...prev, [sugId]: 'ACCEPTED' }));
     setCurrentScore(prev => Math.min(96, prev + 3));
-    setSuggestions(prev => prev.filter(s => s.id !== sug.id));
-    setEditingSuggestionId(null);
-    addToast('Suggestion accepted! ATS score updated.', 'success');
+    addToast('Suggestion accepted! Original resume updated with verified modification.', 'success');
   };
 
   const handleRejectSuggestion = (sugId) => {
-    setSuggestions(prev => prev.filter(s => s.id !== sugId));
-    addToast('Suggestion dismissed.', 'info');
+    setDecisions(prev => ({ ...prev, [sugId]: 'REJECTED' }));
+    addToast('Suggestion dismissed. Original resume remains unchanged.', 'info');
+  };
+
+  const handleEditSuggestion = (sugId, newText) => {
+    setEditedTexts(prev => ({ ...prev, [sugId]: newText }));
+  };
+
+  const handleAcceptAllSuggestions = () => {
+    let appliedCount = 0;
+    let nextResume = { ...resume };
+    const updatedDecisions = { ...decisions };
+
+    suggestions.forEach(sug => {
+      if (sug.status !== 'UNSUPPORTED' && updatedDecisions[sug.id] !== 'ACCEPTED') {
+        updatedDecisions[sug.id] = 'ACCEPTED';
+        appliedCount++;
+        const appliedText = editedTexts[sug.id] || sug.suggested;
+        if (sug.section === 'summary') {
+          nextResume.summary = appliedText;
+        }
+      }
+    });
+
+    if (appliedCount > 0) {
+      setResume(nextResume);
+      setDecisions(updatedDecisions);
+      setCurrentScore(prev => Math.min(96, prev + Math.min(10, appliedCount * 2)));
+      addToast(`Accepted and applied ${appliedCount} AI enhancements!`, 'success');
+    } else {
+      addToast('No eligible pending suggestions to accept.', 'info');
+    }
+  };
+
+  const handleRejectAllSuggestions = () => {
+    const updatedDecisions = { ...decisions };
+    suggestions.forEach(sug => {
+      updatedDecisions[sug.id] = 'REJECTED';
+    });
+    setDecisions(updatedDecisions);
+    addToast('Rejected all suggestions. Original resume remains unchanged.', 'info');
   };
 
   const handleExportDocx = () => {
@@ -1453,98 +1504,20 @@ export default function ResumeBuilderPage() {
               </div>
             )}
 
-            {/* TAB CONTENT: SUGGESTIONS */}
+            {/* TAB CONTENT: AI CHANGE REVIEW (Commit 25) */}
             {activeTab === 'suggestions' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#16A34A', fontWeight: '600' }}>
-                  <ShieldCheck size={16} />
-                  <span>Anti-Fabrication Engine Active</span>
-                </div>
-
-                {suggestions.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)' }}>
-                    <CheckCircle2 size={28} color="#16A34A" style={{ margin: '0 auto 6px' }} />
-                    <p style={{ fontSize: '13px' }}>All AI recommendations applied!</p>
-                  </div>
-                ) : (
-                  suggestions.map((sug) => (
-                    <div key={sug.id} className={styles.suggestionCard}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A' }}>
-                          {sug.title}
-                        </span>
-                        <span
-                          className={`badge ${sug.status === 'SUPPORTED' ? 'badge-success' : 'badge-danger'}`}
-                          style={{ fontSize: '10px' }}
-                        >
-                          {sug.status}
-                        </span>
-                      </div>
-
-                      {editingSuggestionId === sug.id ? (
-                        <textarea
-                          className="form-textarea"
-                          style={{ fontSize: '12px', minHeight: '80px' }}
-                          value={editedSuggestionText}
-                          onChange={(e) => setEditedSuggestionText(e.target.value)}
-                        />
-                      ) : (
-                        <p style={{ fontSize: '12px', color: '#334155', backgroundColor: '#F1F5F9', padding: '8px', borderRadius: '6px', margin: 0 }}>
-                          "{sug.suggested}"
-                        </p>
-                      )}
-
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
-                        <strong>Why?</strong> {sug.explanation}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '6px', marginTop: '4px', justifyContent: 'flex-end' }}>
-                        {sug.status === 'UNSUPPORTED' ? (
-                          <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: '600' }}>
-                            Manual candidate verification required
-                          </div>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => {
-                                if (editingSuggestionId === sug.id) {
-                                  setEditingSuggestionId(null);
-                                } else {
-                                  setEditingSuggestionId(sug.id);
-                                  setEditedSuggestionText(sug.suggested);
-                                }
-                              }}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '11px', padding: '3px 8px' }}
-                            >
-                              <Edit2 size={12} />
-                              <span>{editingSuggestionId === sug.id ? 'Cancel' : 'Edit'}</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleRejectSuggestion(sug.id)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '11px', padding: '3px 8px' }}
-                            >
-                              <X size={12} />
-                              <span>Reject</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleApplySuggestion(sug)}
-                              className="btn btn-primary btn-sm"
-                              style={{ fontSize: '11px', padding: '3px 10px' }}
-                            >
-                              <Check size={12} />
-                              <span>Accept</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <AIChangeReview
+                title="AI Resume Modifications"
+                subtitle="Review each AI proposal. Accept, reject, or edit. The original resume draft will not be overwritten automatically."
+                suggestions={suggestions}
+                decisions={decisions}
+                editedTexts={editedTexts}
+                onAccept={handleAcceptSuggestion}
+                onReject={handleRejectSuggestion}
+                onEdit={handleEditSuggestion}
+                onAcceptAll={handleAcceptAllSuggestions}
+                onRejectAll={handleRejectAllSuggestions}
+              />
             )}
 
             {/* TAB CONTENT: KEYWORDS */}
