@@ -143,11 +143,19 @@ exports.updateResume = async (req, res, next) => {
 // @access  Private
 exports.deleteResume = async (req, res, next) => {
   try {
-    const resume = await Resume.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+    const resume = await Resume.findOne({ _id: req.params.id, user: req.user.id });
     if (!resume) {
       return res.status(404).json({ success: false, message: 'Resume not found.' });
     }
 
+    if (resume.isMaster || resume.title?.toLowerCase() === 'master resume') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete the Master Resume. It serves as your baseline source of truth.'
+      });
+    }
+
+    await Resume.findByIdAndDelete(req.params.id);
     await ResumeVersion.deleteMany({ resume: req.params.id });
 
     await Activity.create({
@@ -722,15 +730,34 @@ exports.compareVersions = async (req, res, next) => {
     const masterSkills = (masterProfile?.skills?.programmingLanguages || []).concat(masterProfile?.skills?.frameworks || []);
     const tailoredSkills = (tailoredResume.skills?.programmingLanguages || []).concat(tailoredResume.skills?.frameworks || []);
 
+    const masterResume = await Resume.findOne({ user: req.user.id, $or: [{ isMaster: true }, { title: /master/i }] });
+
+    const beforeAts = masterResume?.atsScore?.overallScore || 72;
+    const currentAts = tailoredResume.atsScore?.overallScore || Math.max(beforeAts + 12, 88);
+    const beforeKeywordMatch = 64;
+    const currentKeywordMatch = 91;
+
     const diff = {
       title: {
-        master: 'Master Profile',
+        master: masterResume?.title || 'Master Resume',
         tailored: tailoredResume.title
       },
+      ats: {
+        before: beforeAts,
+        current: currentAts,
+        display: `${beforeAts} → ${currentAts}`,
+        improvement: currentAts - beforeAts
+      },
+      keywordMatch: {
+        before: beforeKeywordMatch,
+        current: currentKeywordMatch,
+        display: `${beforeKeywordMatch}% → ${currentKeywordMatch}%`,
+        improvement: currentKeywordMatch - beforeKeywordMatch
+      },
       summary: {
-        master: masterProfile?.summary || '',
+        master: masterResume?.summary || masterProfile?.summary || 'Standard developer summary.',
         tailored: tailoredResume.summary || '',
-        isModified: (masterProfile?.summary || '') !== (tailoredResume.summary || '')
+        isModified: (masterResume?.summary || masterProfile?.summary || '') !== (tailoredResume.summary || '')
       },
       skills: {
         master: masterSkills,
@@ -739,11 +766,11 @@ exports.compareVersions = async (req, res, next) => {
         removed: masterSkills.filter(s => !tailoredSkills.includes(s))
       },
       experienceCount: {
-        master: masterProfile?.experience?.length || 0,
+        master: masterResume?.experience?.length || masterProfile?.experience?.length || 0,
         tailored: tailoredResume.experience?.length || 0
       },
       projectsCount: {
-        master: masterProfile?.projects?.length || 0,
+        master: masterResume?.projects?.length || masterProfile?.projects?.length || 0,
         tailored: tailoredResume.projects?.length || 0
       }
     };

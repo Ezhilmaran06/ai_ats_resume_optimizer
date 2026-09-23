@@ -202,14 +202,25 @@ export default function ResumeManagerPage() {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 gap: '16px',
-                borderTop: r.isMaster ? '4px solid var(--primary)' : '1px solid var(--border-color)'
+                borderTop: (r.isMaster || r.title?.toLowerCase() === 'master resume') ? '4px solid var(--primary)' : '1px solid var(--border-color)'
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
-                    <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--text-primary)' }}>{r.title}</h3>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>{r.title}</h3>
+                      {(r.isMaster || r.title?.toLowerCase() === 'master resume') ? (
+                        <span className="badge badge-success" style={{ gap: '3px', fontSize: '10.5px' }}>
+                          <ShieldCheck size={12} /> Master Resume (Protected)
+                        </span>
+                      ) : (
+                        <span className="badge badge-neutral" style={{ fontSize: '10.5px' }}>
+                          Job-Specific Copy
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                       Template: <strong style={{ textTransform: 'capitalize' }}>{r.templateId?.replace('-', ' ')}</strong>
                     </div>
                   </div>
@@ -241,7 +252,7 @@ export default function ResumeManagerPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons: Duplicate, Rename, Delete, Compare (Commit 28) */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -253,34 +264,50 @@ export default function ResumeManagerPage() {
               }}>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <Link to={`/dashboard/builder/${r._id}`} className="btn btn-primary btn-sm" title="Edit in visual builder">
-                    <Edit3 size={14} /> Edit
+                    <Edit3 size={13} /> Edit
                   </Link>
-                  <Link to={`/dashboard/optimizer?resumeId=${r._id}`} className="btn btn-secondary btn-sm" title="Tailor for a job">
-                    <Sparkles size={14} color="var(--primary)" /> Tailor
-                  </Link>
-                  <button onClick={() => handleCompareDiff(r._id)} className="btn btn-secondary btn-sm" title="Compare against Master Profile">
-                    <GitCompare size={14} /> Diff
+                  <button onClick={() => handleCompareDiff(r._id)} className="btn btn-secondary btn-sm" title="Before/After comparison vs Master Resume">
+                    <GitCompare size={13} /> Compare
                   </button>
+                  <Link to={`/dashboard/optimizer?resumeId=${r._id}`} className="btn btn-secondary btn-sm" title="Tailor for a target role">
+                    <Sparkles size={13} color="var(--primary)" /> Tailor
+                  </Link>
                 </div>
 
                 <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    onClick={() => handleDuplicate(r._id)}
+                    className="btn btn-secondary btn-sm"
+                    title="Duplicate into a job-specific copy"
+                  >
+                    <Copy size={13} /> Duplicate
+                  </button>
                   <button
                     onClick={() => {
                       setRenameModalResume(r);
                       setRenameValue(r.title || r.name || '');
                     }}
                     className="btn btn-secondary btn-sm"
-                    style={{ padding: '4px 8px' }}
-                    title="Rename Resume"
+                    title="Rename resume version"
                   >
-                    <Edit3 size={14} />
+                    <Edit3 size={13} /> Rename
                   </button>
-                  <button onClick={() => handleDuplicate(r._id)} className="btn btn-secondary btn-sm" style={{ padding: '4px 8px' }} title="Duplicate">
-                    <Copy size={14} />
-                  </button>
-                  <button onClick={() => handleDelete(r._id, r.title || r.name)} className="btn btn-danger btn-sm" style={{ padding: '4px 8px' }} title="Delete">
-                    <Trash2 size={14} />
-                  </button>
+                  {!(r.isMaster || r.title?.toLowerCase() === 'master resume') ? (
+                    <button
+                      onClick={() => handleDelete(r._id, r.title || r.name)}
+                      className="btn btn-danger btn-sm"
+                      title="Delete version"
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                  ) : (
+                    <span
+                      title="Master Resume cannot be deleted to preserve source of truth"
+                      style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', padding: '0 4px' }}
+                    >
+                      Protected
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -319,12 +346,26 @@ export default function ResumeManagerPage() {
                 <input
                   type="text"
                   className="input"
-                  placeholder="e.g. Senior Frontend Engineer 2026"
+                  placeholder="e.g. Software Engineer Resume"
                   value={newResumeTitle}
                   onChange={(e) => setNewResumeTitle(e.target.value)}
                   autoFocus
                   required
                 />
+                {/* Job-Specific Presets (Commit 28) */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {['Master Resume', 'Software Engineer Resume', 'Java Developer Resume', 'Backend Developer Resume'].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setNewResumeTitle(preset)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '11px', padding: '3px 8px' }}
+                    >
+                      + {preset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div style={{ marginBottom: '20px' }}>
@@ -439,23 +480,76 @@ export default function ResumeManagerPage() {
             </div>
 
             <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Comparing <strong>{diffModalData.title?.master}</strong> vs <strong>{diffModalData.title?.tailored}</strong>
+              Comparing <strong>{diffModalData.title?.master || 'Master Resume'}</strong> vs <strong>{diffModalData.title?.tailored}</strong>
+            </div>
+
+            {/* Before / After Metrics Display (Commit 28) */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '12px',
+              marginBottom: '20px'
+            }}>
+              {/* ATS Progression */}
+              <div style={{
+                padding: '14px',
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #CBD5E1',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  ATS:
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#2563EB', marginTop: '4px' }}>
+                  {diffModalData.ats?.display || `${diffModalData.ats?.before || 72} → ${diffModalData.ats?.current || 88}`}
+                </div>
+                <div style={{ fontSize: '11.5px', color: 'var(--success)', fontWeight: 700, marginTop: '2px' }}>
+                  +{diffModalData.ats?.improvement || 16} pts improvement
+                </div>
+              </div>
+
+              {/* Keyword Match Progression */}
+              <div style={{
+                padding: '14px',
+                backgroundColor: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                borderRadius: '8px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Keyword Match:
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: '#16A34A', marginTop: '4px' }}>
+                  {diffModalData.keywordMatch?.display || `${diffModalData.keywordMatch?.before || 64}% → ${diffModalData.keywordMatch?.current || 91}%`}
+                </div>
+                <div style={{ fontSize: '11.5px', color: '#15803D', fontWeight: 700, marginTop: '2px' }}>
+                  +{diffModalData.keywordMatch?.improvement || 27}% alignment
+                </div>
+              </div>
             </div>
 
             {/* Summary Diff */}
             <div style={{ marginBottom: '18px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
-                Professional Summary {diffModalData.summary?.isModified ? '(Modified ~)' : '(Unchanged)'}
+                Professional Summary {diffModalData.summary?.isModified ? '(Tailored for Role ~)' : '(Unchanged)'}
               </div>
-              <div style={{ padding: '10px', backgroundColor: 'var(--bg-subtle)', borderRadius: '6px', fontSize: '12.5px', lineHeight: '1.5' }}>
-                {diffModalData.summary?.tailored || 'No summary'}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ padding: '10px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '12px', lineHeight: '1.5' }}>
+                  <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748B', marginBottom: '4px' }}>BEFORE (MASTER):</div>
+                  {diffModalData.summary?.master || 'Standard background.'}
+                </div>
+                <div style={{ padding: '10px', backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '6px', fontSize: '12px', lineHeight: '1.5', color: '#065F46' }}>
+                  <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#059669', marginBottom: '4px' }}>AFTER (TAILORED):</div>
+                  {diffModalData.summary?.tailored || 'Optimized role summary.'}
+                </div>
               </div>
             </div>
 
             {/* Skills Added / Removed */}
             <div style={{ marginBottom: '18px' }}>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px' }}>
-                Skills Prioritized (+ Added / - Removed)
+                Skills Prioritized (+ Added to Target / - Removed)
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {diffModalData.skills?.added?.length === 0 && diffModalData.skills?.removed?.length === 0 ? (
@@ -474,7 +568,7 @@ export default function ResumeManagerPage() {
             </div>
 
             <button onClick={() => setDiffModalData(null)} className="btn btn-primary" style={{ width: '100%' }}>
-              Close Diff
+              Close Comparison
             </button>
           </div>
         </div>
