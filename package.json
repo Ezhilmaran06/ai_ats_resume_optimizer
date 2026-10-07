@@ -1,19 +1,25 @@
 {
   "name": "ai-ats-resume-optimizer",
-  "version": "1.0.0",
-  "description": "AI ATS Resume Optimizer — AI-Powered Resume Scoring & Optimization Platform",
-  "main": "server/server.js",
+  "version": "2.0.0",
+  "description": "AI ATS Resume Optimizer — Single Landing Page AI ATS Resume & Job Description Analyzer",
   "scripts": {
-    "server": "npm --prefix server start",
-    "server:dev": "npm --prefix server run dev",
-    "client": "npm --prefix client dev",
-    "client:build": "npm --prefix client build",
+    "client": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
     "ai": "python -m uvicorn app.main:app --app-dir ai-service --port 8000 --reload",
     "ai:start": "python -m uvicorn app.main:app --app-dir ai-service --port 8000",
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
-    "start": "node server/server.js"
+    "start": "python -m uvicorn app.main:app --app-dir ai-service --port 8000",
+    "test": "python -m unittest discover -s ai-service -p \"test_*.py\""
   },
-  "keywords": ["ats", "resume", "ai", "job-matching", "react", "express", "mongodb"],
+  "keywords": [
+    "ats",
+    "resume",
+    "ai",
+    "fastapi",
+    "react",
+    "vite",
+    "ats-score",
+    "job-matching"
+  ],
   "author": "Ezhilmaran",
   "license": "MIT"
 }

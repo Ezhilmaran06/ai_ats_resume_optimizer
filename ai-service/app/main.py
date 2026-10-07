@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.analyze_routes import router as analyze_router
 from app.api.resume_routes import router as resume_router
 from app.api.ats_routes import router as ats_router
 from app.api.role_routes import router as role_router
@@ -23,6 +24,7 @@ app.add_middleware(
 )
 
 # Mount API Routers
+app.include_router(analyze_router)
 app.include_router(resume_router)
 app.include_router(ats_router)
 app.include_router(role_router)
@@ -31,6 +33,7 @@ app.include_router(match_router)
 
 @app.get("/")
 @app.get("/health")
+@app.get("/api/health")
 @app.get("/api/ai/health")
 async def health_check():
     return {
