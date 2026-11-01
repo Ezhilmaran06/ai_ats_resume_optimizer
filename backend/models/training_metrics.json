@@ -1,0 +1,157 @@
+{
+  "model_type": "MLPClassifier",
+  "hidden_layers": [
+    128,
+    64
+  ],
+  "total_samples": 800,
+  "train_samples": 560,
+  "val_samples": 80,
+  "test_samples": 160,
+  "classes": [
+    "HELLO",
+    "HELP",
+    "I_LOVE_YOU",
+    "NO",
+    "PEACE",
+    "PLEASE",
+    "THANK_YOU",
+    "YES"
+  ],
+  "test_accuracy": 1.0,
+  "test_precision": 1.0,
+  "test_recall": 1.0,
+  "test_f1": 1.0,
+  "confusion_matrix": [
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20
+    ]
+  ],
+  "per_class": {
+    "HELLO": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "HELP": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "I_LOVE_YOU": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "NO": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "PEACE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "PLEASE": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "THANK_YOU": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    },
+    "YES": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "support": 20.0
+    }
+  }
+}
