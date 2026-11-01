@@ -1,298 +1,366 @@
-# AI ATS Resume Optimizer
+# SignSpeak AI — Real-Time Sign Language Recognition and Speech Translation Using Deep Learning
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](https://www.python.org)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-> **Know how well your resume matches the job before you apply.**
-
-A focused, single-purpose AI ATS Resume and Job Description Analyzer. Upload your resume, paste any target job description, and instantly receive an AI ATS Compatibility Score, multi-category score breakdown, keyword matching with strict anti-fabrication guidance, semantic equivalency detection, and prioritized recommendations.
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/Frontend-React_18-61DAFB.svg?logo=react)](https://react.dev)
+[![MediaPipe](https://img.shields.io/badge/Vision-Google_MediaPipe-0078D4.svg)](https://developers.google.com/mediapipe)
+[![Scikit-Learn](https://img.shields.io/badge/AI-MLP_Neural_Classifier-F7931E.svg?logo=scikit-learn)](https://scikit-learn.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## 🎯 Product Purpose
+## 1. Abstract
 
-The application has **only one core purpose**:
-1. Upload your resume (PDF, DOCX, or TXT).
-2. Enter or paste a Job Description.
-3. Analyze the resume using AI and deterministic NLP parsers.
-4. Calculate an AI ATS Compatibility Score (0–100).
-5. Identify matched and important missing keywords from the Job Description.
-6. Perform semantic matching across competencies.
-7. Explain why the resume is losing ATS points.
-8. Provide actionable, truth-preserving improvement suggestions.
-
-No account registration, no login, no multi-page dashboards, no database storage.
+**SignSpeak AI** is an intelligent assistive technology system designed to bridge the communication barrier between individuals who communicate using sign language and the broader non-signing community. By utilizing standard consumer webcams, Google MediaPipe 3D hand tracking, and a Multi-Layer Perceptron (MLP) deep learning classifier, the system captures hand gestures in real time, extracts 21 spatial keypoints, translates recognized signs into coherent text, and synthesizes natural speech output via the Web Speech API.
 
 ---
 
-## ✨ Features
+## 2. Problem Statement
 
-- **Single Landing Page Workflow**: Clean, modern interface designed with SaaS aesthetics; everything takes place on one page.
-- **Multi-Format Resume Ingestion**: Supports text-searchable PDF, DOCX, and TXT files (up to 10MB) with drag-and-drop.
-- **Weighted 8-Dimension ATS Scoring**: Evaluates structural, content, keyword, and language signals rather than simplistic word counts.
-- **Semantic Keyword Matching**: Recognizes equivalencies (e.g., `RESTful APIs ≈ REST APIs`, `Spring Boot ≈ Spring`, `TypeScript ≈ TS`).
-- **Anti-Fabrication Policy**: Missing keywords explicitly guide candidates to add competencies *only if truthfully possessed* with supporting evidence.
-- **Dynamic Problem Diagnosis**: Identifies why points were lost on your specific resume and job description (lacking metrics, missing keywords, layout hazards).
-- **Suggested Rewrites**: Demonstrates concrete impact-focused rewrites using only verified technologies already present in the candidate's resume.
-- **Score Stability**: Deterministic scoring algorithms ensure that re-analyzing the same resume against the same job description produces consistent results.
+Sign language is a primary mode of communication for millions of deaf and hard-of-hearing individuals worldwide. However, because the vast majority of hearing individuals are not fluent in sign language, deaf individuals frequently encounter formidable obstacles in everyday communication, education, healthcare, and employment. Dedicated hardware sensors (such as data gloves or depth cameras) are costly and inconvenient. An accessible, vision-based web application that operates seamlessly on standard webcams empowers spontaneous interaction without specialized hardware.
 
 ---
 
-## 🏗️ Architecture
+## 3. Project Objectives
+
+1. **Hardware-Free Capture**: Ingest live video streams directly via standard browser webcam APIs.
+2. **Keypoint Extraction**: Detect hands and accurately extract 21 3D spatial landmarks $(x, y, z)$.
+3. **Invariant Normalization**: Transform keypoints to be translation- and scale-invariant, ensuring uniform classification across different distances and hand positions.
+4. **Real-Time Classification**: Execute lightweight, high-accuracy inference with latency $< 5\text{ms}$ on CPU.
+5. **Temporal Stability Filtering**: Employ rolling buffer smoothing to eliminate transient prediction jitter.
+6. **Sentence Construction**: Provide an interactive editor to assemble, edit, space, backspace, and clear recognized words.
+7. **Speech Translation**: Convert generated sentences into audible synthesized speech with selectable voices.
+8. **Privacy Guarantee**: Perform all processing locally without streaming video frames to external third-party servers.
+
+---
+
+## 4. Key Features
+
+- **Live Webcam Studio**: Start/stop camera feeds, switch input devices, and toggle a 21-joint skeleton wireframe.
+- **Visual Confidence Gauges**: Real-time confidence bar with configurable minimum threshold indicator.
+- **Probability Breakdown**: Real-time distribution across all supported gesture classes.
+- **Interactive Sentence Builder**:
+  - `[ + Add Sign ]`
+  - `[ Space ]`
+  - `[ ⌫ Backspace ]`
+  - `[ Clear ]`
+  - `[ 🔊 Speak Sentence ]`
+  - `[ ⏹ Stop Speech ]`
+  - Auto-Append toggle for sustained stable gestures.
+- **Multi-Voice Text-to-Speech**: Integrates with browser speech synthesis engines with customizable rate and pitch.
+- **Modular Data Collection & Retraining Pipeline**: Built-in CLI tools to collect custom gesture datasets and retrain the classifier.
+
+---
+
+## 5. System Architecture
 
 ```text
-React (Vite) Single Landing Page
-               ↓
-    POST /api/analyze (multipart/form-data)
-               ↓
-FastAPI Backend (ai-service)
-  ├── Resume Document Parser (pypdf, python-docx, text extraction)
-  ├── Job Description Analyzer (NLP extraction of skills, requirements, responsibilities)
-  ├── Semantic Matcher (Exact, cluster, and component matching)
-  ├── Multi-Dimensional ATS Scoring Engine (Calibrated 8-dimension rubric)
-  └── Anti-Fabrication Recommendation Engine
-               ↓
-Strict Pydantic JSON Response
-               ↓
-Interactive Result Display (Score Meter, Keyword Analysis, Problems, Improvements)
+                    USER
+                     |
+                     v
+              REACT FRONTEND
+                     |
+             Webcam Permission
+                     |
+                     v
+               LIVE VIDEO
+                     |
+        (Controlled ~10 FPS Capture)
+                     |
+                     v
+             OPENCV PROCESSING
+                     |
+                     v
+           MEDIAPIPE HAND DETECTION
+                     |
+                     v
+            21 HAND LANDMARKS (x, y, z)
+                     |
+                     v
+           FEATURE NORMALIZATION
+            - Wrist Translation (0,0,0)
+            - Scale Invariance (Max Dist = 1.0)
+            - 63 Numerical Features
+                     |
+                     v
+              TRAINED MLP MODEL
+                     |
+                     v
+            GESTURE CLASSIFICATION
+                     |
+                     v
+             CONFIDENCE FILTER (>= 75%)
+                     |
+                     v
+             TEMPORAL SMOOTHING
+            (4 Consecutive Window Check)
+                     |
+                     v
+              PREDICTED SIGN
+                     |
+                     v
+             SENTENCE BUILDER
+            (Append, Space, Backspace, Clear)
+                     |
+                     v
+              TEXT TO SPEECH
+            (Browser SpeechSynthesis API)
 ```
 
 ---
 
-## 💻 Tech Stack
+## 6. Technology Stack
 
-- **Frontend**: React 18, Vite 5, Vanilla CSS Design System, Lucide React icons, Axios
-- **Backend / AI Engine**: Python 3.10+, FastAPI, Uvicorn, Pydantic v2
-- **Document Processing**: `pypdf`, `python-docx`
-- **NLP & Analysis**: Custom semantic clusters, regex tokenizers, linguistic metric detectors, and optional external LLM integration (Gemini / OpenAI)
+### Frontend
+- **Framework**: React.js 18
+- **Build Tool**: Vite 5
+- **Styling**: Modern Pure CSS3 (Responsive Grid/Flexbox, Custom Properties; No Tailwind)
+- **APIs**: HTML5 MediaDevices / getUserMedia, Web Speech API (SpeechSynthesis)
+
+### Backend & AI
+- **Language**: Python 3.10+ (Tested on Python 3.14)
+- **Web Framework**: FastAPI & Uvicorn
+- **Computer Vision**: OpenCV (cv2) & Google MediaPipe Tasks Vision / Solutions
+- **Deep Learning / ML**: Scikit-Learn (Multi-Layer Perceptron), NumPy, Pandas
+- **Model Storage**: Joblib & JSON
 
 ---
 
-## 🚀 Installation & Setup
+## 7. Project Structure
+
+```text
+ai_ats_resume_optimizer/
+│
+├── frontend/                     # React + Vite web application
+│   ├── public/assets/            # Static assets and icons
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Navbar.jsx            # Header navigation & service status indicator
+│   │   │   ├── WebcamPanel.jsx       # Camera view, landmark canvas & controls
+│   │   │   ├── PredictionPanel.jsx   # Current sign display & class probabilities
+│   │   │   ├── SentenceBuilder.jsx   # Text assembly, controls & text-to-speech
+│   │   │   ├── ConfidenceIndicator.jsx # Visual confidence gauge
+│   │   │   ├── SupportedSigns.jsx    # Supported gesture vocabulary cards
+│   │   │   ├── HowItWorks.jsx        # Architectural pipeline overview
+│   │   │   ├── AboutSection.jsx      # Problem statement & scope limitations
+│   │   │   └── StatusMessage.jsx     # Alert & status banners
+│   │   ├── services/
+│   │   │   └── api.js                # Centralized FastAPI client
+│   │   ├── hooks/
+│   │   │   └── useWebcam.js          # Hardware webcam access and frame capture
+│   │   ├── App.jsx                   # Main application coordinator
+│   │   ├── App.css                   # Custom responsive styling
+│   │   ├── index.css                 # Base resets and CSS variables
+│   │   └── main.jsx                  # React entry point
+│   ├── tests/
+│   │   └── frontend.test.js          # Unit tests (Node.js test runner)
+│   ├── package.json
+│   └── vite.config.js
+│
+├── backend/                      # Python FastAPI server & ML pipeline
+│   ├── app/
+│   │   ├── main.py                   # FastAPI app entry point & lifespan loader
+│   │   ├── config.py                 # Pydantic configuration & environment settings
+│   │   ├── api/
+│   │   │   ├── routes.py             # Health, status, vocabulary & recognize routes
+│   │   │   └── schemas.py            # Pydantic request & response models
+│   │   ├── vision/
+│   │   │   ├── hand_detector.py      # MediaPipe HandLandmarker wrapper
+│   │   │   ├── landmark_utils.py     # 21-keypoint extraction & normalization
+│   │   │   └── preprocessing.py      # Base64 image decoding pipeline
+│   │   ├── inference/
+│   │   │   ├── model_loader.py       # In-memory model singleton
+│   │   │   └── predictor.py          # Temporal smoothing & confidence filtering
+│   │   ├── services/
+│   │   │   └── recognition_service.py # Vision + inference orchestration
+│   │   └── utils/
+│   │       └── validation.py         # Shape and label validation helpers
+│   ├── models/
+│   │   ├── sign_mlp_model.pkl        # Serialized MLP model weights
+│   │   ├── label_map.json            # Class index to gesture name mapping
+│   │   ├── hand_landmarker.task      # MediaPipe Tasks vision model asset
+│   │   ├── training_metrics.json     # Test evaluation results
+│   │   └── README.md
+│   ├── dataset/
+│   │   ├── raw/                      # Optional raw image captures
+│   │   ├── processed/                # Extracted 63-feature CSV & test splits
+│   │   └── README.md
+│   ├── training/
+│   │   ├── collect_data.py           # Webcam data collector & benchmark generator
+│   │   ├── extract_landmarks.py      # Batch keypoint extraction from raw images
+│   │   ├── train_model.py            # MLP neural network training pipeline
+│   │   ├── evaluate_model.py         # Standalone test set evaluation
+│   │   └── export_model.py           # Model packaging & compatibility verification
+│   ├── tests/
+│   │   └── test_backend.py           # Pytest backend and API tests
+│   ├── requirements.txt
+│   └── README.md
+│
+├── docs/                         # Technical documentation
+│   ├── architecture.md           # Deep dive into dataflow and normalization
+│   ├── dataset.md                # Dataset structure and collection guidelines
+│   ├── model_training.md         # MLP architecture and training procedures
+│   └── api_documentation.md      # OpenAPI specification and endpoint examples
+│
+├── .env.example                  # Environment configuration template
+├── .gitignore                    # Comprehensive ignore rules
+├── LICENSE                       # MIT License
+└── README.md
+```
+
+---
+
+## 8. Supported Gesture Vocabulary
+
+The active model classifies the following **8 high-impact gestures**:
+
+| Gesture | Label | Visual Description |
+|:---|:---:|:---|
+| **Hello** | `HELLO` | Open hand with palm forward, fingers upright waving gently |
+| **Thank You** | `THANK_YOU` | Open flat palm moving forward from chin/mouth outward |
+| **Yes** | `YES` | Closed fist nodding up and down |
+| **No** | `NO` | Index and middle fingers snapping down onto thumb |
+| **I Love You** | `I_LOVE_YOU` | Thumb, index, and pinky extended; middle and ring folded |
+| **Please** | `PLEASE` | Open flat palm circular motion toward chest |
+| **Help** | `HELP` | Upright thumbs-up fist resting on flat open palm |
+| **Peace** | `PEACE` | Index and middle fingers extended upward in a 'V' shape |
+
+---
+
+## 9. Installation & Execution Guide
 
 ### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [Python](https://www.python.org/) (v3.10 or higher)
+- **Node.js**: v18.0.0 or higher (v22 tested)
+- **Python**: 3.10 or higher (Python 3.14 tested)
+- **Webcam**: Standard USB or integrated camera
 
 ---
 
-### 1. Backend Setup (FastAPI)
-
-Navigate to the `ai-service` directory and install Python dependencies:
+### Step 1: Clone and Configure Environment
 
 ```bash
-cd ai-service
-pip install -r requirements.txt
+git clone https://github.com/Ezhilmaran06/ai_ats_resume_optimizer.git
+cd ai_ats_resume_optimizer
+copy .env.example .env
 ```
 
-*(Optional)* Configure external LLM credentials in `.env` if desired:
+---
 
-```env
-HOST=127.0.0.1
-PORT=8000
-AI_API_KEY=your_gemini_or_openai_api_key_here
-AI_MODEL=gemini-1.5-flash
-```
+### Step 2: Backend Setup & Execution
 
-*Note: If `AI_API_KEY` is not provided, the engine runs completely offline using its calibrated local NLP semantic analyzer.*
+1. Navigate to the `backend` directory:
+   ```bash
+   cd backend
+   ```
 
-Start the FastAPI backend service:
+2. Create and activate a Python virtual environment:
+   ```bash
+   # Windows:
+   python -m venv .venv
+   .venv\Scripts\activate
+
+   # macOS / Linux:
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. Install backend dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Start the FastAPI development server:
+   ```bash
+   uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+   ```
+
+The backend will start at `http://127.0.0.1:8000`. You can inspect the interactive OpenAPI Swagger documentation at `http://127.0.0.1:8000/docs`.
+
+---
+
+### Step 3: Frontend Setup & Execution
+
+1. Open a new terminal and navigate to `frontend`:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser and navigate to:
+   ```text
+   http://localhost:5173
+   ```
+
+---
+
+## 10. Training Pipeline Execution
+
+If you wish to collect new gestures or re-train the model:
 
 ```bash
-# From ai-service directory
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+cd backend
 
-# Or from the project root
-npm run ai
+# 1. Collect custom gesture samples via webcam:
+python training/collect_data.py --label HELLO --samples 100
+
+# Or generate the benchmark dataset seed:
+python training/collect_data.py --generate-benchmark
+
+# 2. Train the MLP model:
+python training/train_model.py --epochs 500 --lr 0.001
+
+# 3. Evaluate model metrics on the held-out test split:
+python training/evaluate_model.py
+
+# 4. Verify model export compatibility:
+python training/export_model.py
 ```
-
-The API will be available at `http://127.0.0.1:8000`. API documentation is available at `http://127.0.0.1:8000/docs`.
 
 ---
 
-### 2. Frontend Setup (React + Vite)
+## 11. Testing & Validation
 
-In a new terminal, navigate to the `client` directory and install npm packages:
-
+### Backend Tests (Pytest)
 ```bash
-cd client
-npm install
+cd backend
+pytest tests/ -v
 ```
+Verifies health checks, model status schemas, invalid image handling, blank frame detection, landmark invariance, and temporal smoother behavior.
 
-Start the Vite development server:
-
+### Frontend Tests (Node.js Test Runner)
 ```bash
-# From client directory
-npm run dev
-
-# Or from the project root
-npm run client
+cd frontend
+npm test
 ```
-
-Open `http://localhost:5173` in your browser.
-
----
-
-### 3. Production Build
-
-To build the optimized static assets:
-
-```bash
-npm run client:build
-```
+Verifies confidence classification, sentence builder manipulations (Add, Space, Backspace, Clear), camera error handlers, and speech synthesis fallbacks.
 
 ---
 
-## 📄 Supported Resume Formats
+## 12. Important Scope Limitations
 
-- **PDF** (`.pdf`) — Plain text-searchable PDFs (scanned or image-only PDFs will return an actionable prompt).
-- **DOCX** (`.docx`, `.doc`) — Microsoft Word documents.
-- **TXT** (`.txt`) — Standard plain text documents.
-
-Maximum file size: **10 MB**.
+- **Defined Vocabulary**: The current system classifies a defined vocabulary of supported signs rather than an open-ended natural sign language dictionary.
+- **Natural Sign Language Complexity**: Complete natural sign languages (such as Indian Sign Language or American Sign Language) incorporate intricate grammatical rules, continuous fluid transitions, spatial syntax, and non-manual signals (facial expressions and torso postures) that are not fully captured by hand landmarks alone.
+- **Single-Hand Tracking**: The initial version is configured for single-hand gestures. Two-handed compound signs can be added by expanding the detector configuration to `max_num_hands=2` and updating feature dimensions to 126.
 
 ---
 
-## 🔌 API Endpoint
+## 13. Future Improvements
 
-### `POST /api/analyze`
-
-**Request:** `multipart/form-data`
-
-| Field | Type | Description |
-|---|---|---|
-| `resume` | `File` | Uploaded resume file (PDF, DOCX, TXT) |
-| `job_description` | `string` | Target job description text (minimum 30 characters) |
-
-**Response Format:** Validated with Pydantic (`AnalyzeResponse`)
-
-```json
-{
-  "ats_score": 84,
-  "score_breakdown": {
-    "ats_readability": 13,
-    "structure": 15,
-    "keyword_coverage": 18,
-    "skills_match": 13,
-    "experience_relevance": 8,
-    "project_relevance": 7,
-    "job_alignment": 8,
-    "professional_language": 5
-  },
-  "matched_keywords": ["Python", "JavaScript", "React", "PostgreSQL", "Docker", "Git"],
-  "missing_keywords": [
-    {
-      "keyword": "Kubernetes",
-      "importance": "HIGH",
-      "reason": "Listed as a required competency in the job description but not detected in the resume. If you have genuine experience with Kubernetes, consider adding it to your Skills or Projects section with supporting evidence.",
-      "risky": true
-    }
-  ],
-  "recommended_keywords": [
-    {
-      "keyword": "Kubernetes",
-      "importance": "HIGH",
-      "reason": "Core requirement for Cloud Infrastructure role."
-    }
-  ],
-  "semantic_matches": [
-    {
-      "requirement": "REST APIs",
-      "resume_match": "RESTful APIs",
-      "match_type": "Strong Match",
-      "explanation": "Semantic match: 'RESTful APIs' in resume matches target requirement 'REST APIs'."
-    }
-  ],
-  "problems": [
-    {
-      "title": "Core Required Keywords Missing (Kubernetes)",
-      "description": "The job description explicitly prioritizes Kubernetes, but it was not found in your resume.",
-      "severity": "HIGH"
-    }
-  ],
-  "recommendations": [
-    {
-      "priority": "Priority 1",
-      "title": "Incorporate Verified Missing Keywords Where Truthful",
-      "reason": "ATS algorithms use keyword density and placement to rank candidates.",
-      "suggestion": "Review missing keywords. If you possess genuine experience, document them in your Skills and Projects sections. Do NOT add technologies you have not worked with.",
-      "suggested_rewrite": {
-        "section": "Projects / Experience",
-        "current": "Developed a web store using React and Python.",
-        "suggested": "Architected and deployed web store using React, Python, PostgreSQL, ensuring high reliability, measurable performance impact, and ATS keyword coverage.",
-        "label": "Suggested Rewrite",
-        "reason": "Replaces basic task description with an active power verb and emphasizes verified technical stack."
-      }
-    }
-  ],
-  "resume_summary": "Alex Morgan | Profile includes 1 experience record(s) and 1 project(s). Core competencies: React, Python, PostgreSQL.",
-  "job_summary": "Target Role: Full Stack Software Engineer | Key requirements: Python, React, PostgreSQL, Kubernetes.",
-  "confidence": 92
-}
-```
+1. **Sequential Dynamic Gesture Support**: Integrate an LSTM or Transformer temporal sequence model for continuous gestures (e.g. multi-word signing).
+2. **Holistic Multimodal Capture**: Expand MediaPipe to include Face Mesh and Pose tracking to recognize facial grammar and body movement.
+3. **Multilingual Speech Output**: Incorporate multi-language translation (e.g., translating recognized signs into Hindi, Tamil, Spanish, etc.).
+4. **Offline Mobile App**: Package the model using TensorFlow Lite for native iOS and Android edge inference.
 
 ---
 
-## 📊 ATS Scoring Methodology
+## 14. License
 
-The **AI ATS Compatibility Score** (0–100) is calibrated across 8 weighted dimensions:
-
-| Dimension | Max Points | What It Measures |
-|---|---|---|
-| **ATS Readability** | 15 | Plain text extractability, clean character encoding, standard contact header |
-| **Resume Structure** | 15 | Linear section hierarchy, standard headings (Summary, Experience, Education, Skills, Projects) |
-| **Keyword Coverage** | 20 | Weighted ratio of required and preferred technologies matched in resume |
-| **Skills Match** | 15 | Semantic competency alignment across technical domains |
-| **Experience Relevance** | 10 | Work history depth, role title alignment, and accomplishments |
-| **Project Relevance** | 10 | Technical project depth, verified stack tags, and complexity |
-| **Job Alignment** | 10 | Responsibilities overlap, education/degree fit, and role level |
-| **Professional Language** | 5 | Power action verbs, absence of passive responsibility phrasing and personal pronouns |
-| **Total** | **100** | **AI ATS Compatibility Score** |
-
-### Calibration Bands
-
-- **95 – 100**: Exceptional ATS Optimization
-- **85 – 94**: Strong Competitive Alignment
-- **70 – 84**: Strong ATS Compatibility
-- **55 – 69**: Moderate ATS Compatibility
-- **40 – 54**: Below Industry Standards
-- **20 – 39**: Critical Rework Required
-
----
-
-## 🛡️ Anti-Fabrication & Integrity Guarantee
-
-The system strictly adheres to an **Anti-Fabrication Policy**:
-- **Never hallucinates experience**: The AI never instructs a candidate to add a skill they do not possess.
-- **Verified rewrites only**: Any suggested bullet rewrites reference exclusively technologies already verified in the candidate's existing resume.
-- **Risky keyword alerts**: Highlights missing technologies with a warning to verify before adding.
-
----
-
-## 🧪 Testing
-
-Run the full automated test suite:
-
-```bash
-# Run ATS optimizer tests
-python -m unittest discover -s ai-service -p "test_*.py"
-```
-
-The test suite validates:
-1. PDF, DOCX, and TXT parsing.
-2. Error handling (missing resume, missing JD, invalid formats, empty documents).
-3. Score calibration (high-matching JD vs low-matching JD).
-4. Missing keyword detection and anti-fabrication phrasing.
-5. Deterministic score stability across repeated runs.
-6. Mathematical consistency of the 8-dimension breakdown.
-7. Fully unauthenticated access.
-
----
-
-## 📝 License
-
-Distributed under the MIT License.
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
