@@ -1,43 +1,63 @@
-# Dependencies
+# Node & Frontend
 node_modules/
-.pnp
-.pnp.js
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Build files
 dist/
-build/
-
-# Logs
+dist-ssr/
+*.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-logs/
-*.log
+pnpm-debug.log*
 
-# OS Files
-.DS_Store
-Thumbs.db
+# Environment Variables
+.env
+.env.local
+.env.*.local
+!.env.example
 
-# Uploads
-uploads/*
-!uploads/.gitkeep
-
-# IDE files
-.vscode/
-.idea/
-
-# Python
+# Python & Backend
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 .venv/
 venv/
 ENV/
+env/
 
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MediaPipe & OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Dataset raw media (preserve README and samples)
+backend/dataset/raw/*.mp4
+backend/dataset/raw/*.avi
+backend/dataset/raw/*.mov
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
