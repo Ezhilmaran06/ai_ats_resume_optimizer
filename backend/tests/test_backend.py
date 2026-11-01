@@ -121,3 +121,4 @@ def test_missing_model_behavior(tmp_path):
     assert not missing_model.is_loaded
     summary = missing_model.get_status_summary()
     assert summary["model_loaded"] is False
+

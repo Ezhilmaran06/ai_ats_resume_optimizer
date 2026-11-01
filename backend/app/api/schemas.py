@@ -53,3 +53,4 @@ class VocabularyResponse(BaseModel):
     vocabulary: List[VocabularyItem]
     total_signs: int
     model_loaded: bool
+

@@ -103,3 +103,4 @@ Each detected hand yields 21 keypoints with spatial coordinates $(x_i, y_i, z_i)
 
 3. **Feature Vector**:
    $$\mathbf{x} = [x''_0, y''_0, z''_0, x''_1, y''_1, z''_1, \dots, x''_{20}, y''_{20}, z''_{20}]^T \in \mathbb{R}^{63}$$
+

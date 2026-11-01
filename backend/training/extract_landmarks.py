@@ -80,3 +80,4 @@ def extract_landmarks_from_raw():
 
 if __name__ == "__main__":
     extract_landmarks_from_raw()
+

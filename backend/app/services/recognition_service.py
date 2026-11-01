@@ -138,3 +138,4 @@ class RecognitionService:
         self.detector.close()
 
 recognition_service = RecognitionService()
+

@@ -154,3 +154,4 @@ test('API recognize frame payload format', () => {
   assert.equal(payload.image, 'data:image/jpeg;base64,abc123');
   assert.equal(payload.confidence_threshold, 0.8);
 });
+

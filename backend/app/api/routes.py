@@ -93,3 +93,4 @@ def reset_smoothing():
     """
     predictor.reset_smoother()
     return {"success": True, "message": "Smoothing buffer reset."}
+

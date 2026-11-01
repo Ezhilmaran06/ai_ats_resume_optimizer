@@ -30,3 +30,4 @@ Or generate the benchmark dataset:
 ```bash
 python training/collect_data.py --generate-benchmark
 ```
+

@@ -63,3 +63,4 @@ python training/export_model.py
 - `POST /api/recognize` — Single frame recognition (JSON payload with base64 image)
 - `POST /api/recognize/reset` — Reset temporal smoothing window
 - `GET /docs` — Interactive OpenAPI Swagger UI
+

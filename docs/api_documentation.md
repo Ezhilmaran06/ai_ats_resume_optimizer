@@ -145,3 +145,4 @@ Clears the temporal smoothing window buffer.
   "message": "Smoothing buffer reset."
 }
 ```
+

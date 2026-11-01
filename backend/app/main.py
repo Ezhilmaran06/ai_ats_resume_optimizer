@@ -61,3 +61,4 @@ def root():
         "health_check": "/api/health",
         "model_loaded": gesture_model.is_loaded
     }
+

@@ -11,3 +11,4 @@ This directory stores the trained model artifacts and associated metadata for Si
 ## Loading Lifecycle
 
 Models are loaded once into memory during the FastAPI lifespan startup in `app/inference/model_loader.py`. If files are missing, the backend reports `model_loaded: false` through `/api/health` and `/api/model/status` without crashing.
+

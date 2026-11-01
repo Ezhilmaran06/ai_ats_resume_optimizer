@@ -200,3 +200,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     train(hidden_layers=tuple(args.layers), max_iter=args.epochs, learning_rate_init=args.lr)
+

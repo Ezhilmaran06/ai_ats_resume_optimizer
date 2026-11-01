@@ -364,3 +364,4 @@ Verifies confidence classification, sentence builder manipulations (Add, Space, 
 ## 14. License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+

@@ -46,3 +46,4 @@ export default function StatusMessage({ type = 'info', title, message, actionTex
     </div>
   );
 }
+

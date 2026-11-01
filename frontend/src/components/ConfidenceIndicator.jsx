@@ -42,3 +42,4 @@ export default function ConfidenceIndicator({ confidence = 0, threshold = 0.75, 
     </div>
   );
 }
+

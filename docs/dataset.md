@@ -67,3 +67,4 @@ python training/collect_data.py --generate-benchmark
 ```
 
 Generates 800 samples (100 per class) with natural spatial jitter, rotation, scale, and translation variations.
+

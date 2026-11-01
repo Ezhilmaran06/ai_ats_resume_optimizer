@@ -104,3 +104,4 @@ class GesturePredictor:
 
 # Global predictor instance
 predictor = GesturePredictor()
+

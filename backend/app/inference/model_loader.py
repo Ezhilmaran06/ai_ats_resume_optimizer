@@ -117,3 +117,4 @@ class GestureModel:
 
 # Global singleton model instance loaded in FastAPI lifespan
 gesture_model = GestureModel()
+

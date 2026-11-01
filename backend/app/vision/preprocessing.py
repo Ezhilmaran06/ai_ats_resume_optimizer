@@ -52,3 +52,4 @@ def preprocess_landmarks(mediapipe_landmarks) -> Tuple[Optional[np.ndarray], Lis
         
     features = normalize_landmarks(raw_coords)
     return features, dict_list
+
